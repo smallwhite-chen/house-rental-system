@@ -1,0 +1,151 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─── Enums ───────────────────────────────────────────────────────────────────
+
+enum Role {
+  LANDLORD
+  TENANT
+}
+
+enum PropertyStatus {
+  AVAILABLE
+  RENTED
+  MAINTENANCE
+}
+
+enum ContractStatus {
+  ACTIVE
+  EXPIRED
+  TERMINATED
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  OVERDUE
+}
+
+// ─── NextAuth Models ─────────────────────────────────────────────────────────
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+  password      String?
+  role          Role      @default(TENANT)
+  phone         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  accounts   Account[]
+  sessions   Session[]
+  properties Property[] @relation("LandlordProperties")
+  contracts  Contract[] @relation("TenantContracts")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ─── Rental System Models ─────────────────────────────────────────────────────
+
+model Property {
+  id          String         @id @default(cuid())
+  title       String
+  description String?        @db.Text
+  address     String
+  city        String
+  district    String?
+  zipCode     String?
+  rent        Decimal        @db.Decimal(10, 2)
+  deposit     Decimal        @db.Decimal(10, 2)
+  area        Float?
+  rooms       Int            @default(1)
+  bathrooms   Int            @default(1)
+  floor       Int?
+  totalFloors Int?
+  status      PropertyStatus @default(AVAILABLE)
+  images      String[]
+  landlordId  String
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  landlord  User       @relation("LandlordProperties", fields: [landlordId], references: [id])
+  contracts Contract[]
+}
+
+model Contract {
+  id         String         @id @default(cuid())
+  propertyId String
+  tenantId   String
+  startDate  DateTime
+  endDate    DateTime
+  rentAmount Decimal        @db.Decimal(10, 2)
+  deposit    Decimal        @db.Decimal(10, 2)
+  status     ContractStatus @default(ACTIVE)
+  terms      String?        @db.Text
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
+
+  property Property  @relation(fields: [propertyId], references: [id])
+  tenant   User      @relation("TenantContracts", fields: [tenantId], references: [id])
+  payments Payment[]
+}
+
+model Payment {
+  id         String        @id @default(cuid())
+  contractId String
+  amount     Decimal       @db.Decimal(10, 2)
+  dueDate    DateTime
+  paidDate   DateTime?
+  status     PaymentStatus @default(PENDING)
+  note       String?
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+
+  contract Contract @relation(fields: [contractId], references: [id])
+}
