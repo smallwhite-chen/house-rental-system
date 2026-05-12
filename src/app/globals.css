@@ -2,35 +2,39 @@
 
 /*
  * Google Material Design 3 design tokens (light scheme baseline).
- * 顏色採用 MD3 預設的 baseline palette (primary = #6750A4)。
- * 後續可在 Phase 2 改為公司品牌色，並補 dark scheme。
+ *
+ * 主色：森林綠（#2D6A4F）— 公司品牌色。
+ * 注意：刻意選比 status-rented（#2E7D32）更深、更冷的綠，避免「主要操作按鈕」與
+ * 「出租中狀態」視覺混淆。
+ *
+ * 後續：dark scheme 可於上線前再補。
  */
 :root {
-  /* Surfaces */
-  --md-sys-color-background: #fef7ff;
-  --md-sys-color-on-background: #1d1b20;
-  --md-sys-color-surface: #fef7ff;
-  --md-sys-color-on-surface: #1d1b20;
-  --md-sys-color-surface-container: #f3edf7;
-  --md-sys-color-surface-container-high: #ece6f0;
-  --md-sys-color-surface-variant: #e7e0ec;
-  --md-sys-color-on-surface-variant: #49454f;
-  --md-sys-color-outline: #79747e;
-  --md-sys-color-outline-variant: #cac4d0;
+  /* Surfaces — 中性偏微綠白（搭配綠色主題的 MD3 surface tone） */
+  --md-sys-color-background: #f7fbf8;
+  --md-sys-color-on-background: #181d1a;
+  --md-sys-color-surface: #f7fbf8;
+  --md-sys-color-on-surface: #181d1a;
+  --md-sys-color-surface-container: #ecf1ed;
+  --md-sys-color-surface-container-high: #e5ebe7;
+  --md-sys-color-surface-variant: #dce5de;
+  --md-sys-color-on-surface-variant: #404943;
+  --md-sys-color-outline: #717873;
+  --md-sys-color-outline-variant: #c0c9c1;
 
-  /* Primary */
-  --md-sys-color-primary: #6750a4;
+  /* Primary — 森林綠 */
+  --md-sys-color-primary: #2d6a4f;
   --md-sys-color-on-primary: #ffffff;
-  --md-sys-color-primary-container: #eaddff;
-  --md-sys-color-on-primary-container: #21005d;
+  --md-sys-color-primary-container: #b0efc2;
+  --md-sys-color-on-primary-container: #002112;
 
-  /* Secondary */
-  --md-sys-color-secondary: #625b71;
+  /* Secondary — 綠調中性灰（搭配 primary 的 MD3 secondary） */
+  --md-sys-color-secondary: #51635d;
   --md-sys-color-on-secondary: #ffffff;
-  --md-sys-color-secondary-container: #e8def8;
-  --md-sys-color-on-secondary-container: #1d192b;
+  --md-sys-color-secondary-container: #d4e8e0;
+  --md-sys-color-on-secondary-container: #0f1f1b;
 
-  /* Tertiary */
+  /* Tertiary — 暖粉色（作為綠色的互補強調色） */
   --md-sys-color-tertiary: #7d5260;
   --md-sys-color-on-tertiary: #ffffff;
   --md-sys-color-tertiary-container: #ffd8e4;
