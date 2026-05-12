@@ -29,6 +29,9 @@ const providers: NextAuthConfig["providers"] = [
 
       if (!user || !user.password) return null;
 
+      // SPEC §3.2：停用狀態的帳號不允許登入
+      if (user.status !== "ACTIVE") return null;
+
       const isValid = await bcrypt.compare(
         credentials.password as string,
         user.password

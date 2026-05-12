@@ -1,5 +1,12 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
+// 房屋租賃管理系統 — Prisma Schema
+// 依據 SPEC.md v1.0 設計
+//
+// 設計原則：
+// - 不使用 Role enum 表示 LANDLORD/TENANT；公司端使用者透過 RBAC（Role 表）授權。
+// - 房客（Tenant）為獨立資料表，不掛在 User 上（SPEC §5）。
+// - 多數種類資料表（PropertyType、ExpenseType 等）的「使用中不可刪除」由 service layer
+//   驗證 + DB onDelete: Restrict 把關。
+// - 圖片／PDF／附件目前以 URL 字串儲存；Phase 6/7 再決定走 Supabase Storage 或 Vercel Blob。
 
 generator client {
   provider = "prisma-client"
@@ -10,49 +17,155 @@ datasource db {
   provider = "postgresql"
 }
 
-// ─── Enums ───────────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════
+// Enums
+// ═══════════════════════════════════════════════════════════════════════════
 
-enum Role {
-  LANDLORD
-  TENANT
+/// 帳號狀態（SPEC §3.2）
+enum AccountStatus {
+  ACTIVE
+  DISABLED
 }
 
-enum PropertyStatus {
-  AVAILABLE
-  RENTED
-  MAINTENANCE
+/// RBAC 操作類型（SPEC §3.3）
+enum PermissionAction {
+  VIEW
+  CREATE
+  EDIT
+  DELETE
+}
+
+/// RBAC 模組識別碼（對應系統各功能單元）
+enum ModuleKey {
+  SETTINGS_GENERAL
+  SETTINGS_ACCOUNTS
+  SETTINGS_ROLES
+  SETTINGS_NOTIFICATIONS
+  SETTINGS_PAYMENT_METHODS
+  SETTINGS_PROPERTY_TYPES
+  SETTINGS_INCOME_TYPES
+  SETTINGS_EXPENSE_TYPES
+  SETTINGS_EQUIPMENT_TYPES
+  SETTINGS_COMMUNICATION_TAGS
+  SETTINGS_AUDIT_LOG
+  PROPERTIES
+  TENANTS
+  CONTRACTS
+  INVOICES
+  PAYMENTS
+  REPORTS
+  EXPENSES
+  COMMUNICATIONS
+  DASHBOARD
+}
+
+/// 通知觸發事件（SPEC §3.4，系統預定義，不可新增）
+enum NotificationEventKey {
+  CONTRACT_CREATED // 合約建立（事件型）
+  CONTRACT_EXPIRING // 租約到期（時間型）
+  CONTRACT_RENEWAL_DUE // 租約即將續約（時間型）
+  CONTRACT_TERMINATED // 合約終止（事件型）
+  INVOICE_GENERATED // 租金帳單產生（事件型）
+  RENT_DUE_SOON // 租金即將到期（時間型）
+  RENT_OVERDUE // 租金逾期（時間型）
+  PAYMENT_RECEIVED // 租金收款完成（事件型）
+}
+
+/// 通知事件類別
+enum NotificationEventType {
+  EVENT // 事件型（即時觸發）
+  SCHEDULED // 時間型（依日期觸發）
+}
+
+/// 房間類型（SPEC §4.3）
+enum UnitType {
+  SUITE // 套房
+  ROOM // 雅房
+}
+
+/// 房間／合約衍生狀態（SPEC §4.4、§6.2）
+/// - 房間狀態：VACANT / RENTED / OVERDUE / MAINTENANCE
+/// - 合約狀態：ACTIVE / EXPIRED / TERMINATED / COMPLETED
+/// 兩者使用各自 enum 以保持語意清楚。
+enum UnitStatus {
+  VACANT // 空置（自動）
+  RENTED // 出租中（自動）
+  OVERDUE // 合約逾期（自動）
+  MAINTENANCE // 整修中（手動）
 }
 
 enum ContractStatus {
-  ACTIVE
-  EXPIRED
-  TERMINATED
+  ACTIVE // 進行中（自動）
+  EXPIRED // 已到期（自動）
+  TERMINATED // 已終止（手動）
+  COMPLETED // 已完成（手動）
 }
 
-enum PaymentStatus {
-  PENDING
-  PAID
-  OVERDUE
+/// 設備狀態（SPEC §6.5）
+enum EquipmentCondition {
+  GOOD // 良好
+  FAIR // 普通
+  DAMAGED // 損壞
 }
 
-// ─── NextAuth Models ─────────────────────────────────────────────────────────
+/// 帳單收款狀態（SPEC §7.1）
+enum InvoiceStatus {
+  UNPAID // 未收款
+  PARTIAL // 部分收款
+  PAID // 已收款
+  OVERPAID // 已收款（溢收）
+  OVERDUE // 逾期
+}
 
+/// 支出層級（SPEC §7.4）
+enum ExpenseLevel {
+  PROPERTY // 房產層級
+  UNIT // 房間層級
+}
+
+/// 溝通紀錄處理狀態（SPEC §8.2）
+enum CommunicationStatus {
+  PENDING // 待處理
+  IN_PROGRESS // 處理中
+  COMPLETED // 已完成
+}
+
+/// Audit Log 操作類型（SPEC §3.11）
+enum AuditAction {
+  CREATE
+  UPDATE
+  DELETE
+  LOGIN
+  LOGOUT
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// NextAuth 模型（adapter required）
+// ═══════════════════════════════════════════════════════════════════════════
+
+/// 系統使用者（公司端管理者）
+/// 房客資料另存於 Tenant 表，不掛在此處。
 model User {
-  id            String    @id @default(cuid())
-  name          String?
-  email         String    @unique
+  id            String        @id @default(cuid())
+  name          String
+  email         String        @unique
   emailVerified DateTime?
   image         String?
-  password      String?
-  role          Role      @default(TENANT)
+  password      String? // Credentials 登入時使用（OAuth 登入為 null）
   phone         String?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  status        AccountStatus @default(ACTIVE)
+  note          String?       @db.Text
+  roleId        String
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
 
-  accounts   Account[]
-  sessions   Session[]
-  properties Property[] @relation("LandlordProperties")
-  contracts  Contract[] @relation("TenantContracts")
+  role              Role                        @relation(fields: [roleId], references: [id], onDelete: Restrict)
+  accounts          Account[]
+  sessions          Session[]
+  auditLogs         AuditLog[]
+  notificationRules NotificationRuleRecipient[]
+
+  @@index([roleId])
 }
 
 model Account {
@@ -72,6 +185,7 @@ model Account {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
+  @@index([userId])
 }
 
 model Session {
@@ -81,6 +195,8 @@ model Session {
   expires      DateTime
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 model VerificationToken {
@@ -91,61 +207,500 @@ model VerificationToken {
   @@unique([identifier, token])
 }
 
-// ─── Rental System Models ─────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════
+// §3.1 系統基本設定（singleton）
+// ═══════════════════════════════════════════════════════════════════════════
+
+/// 公司基本資料 + 地區格式設定（單一筆紀錄）
+/// 使用固定 id "singleton" 確保只會有一筆。
+model CompanySettings {
+  id             String   @id @default("singleton")
+  companyName    String
+  taxId          String // 統一編號
+  contactPhone   String
+  contactEmail   String
+  contactAddress String
+  currency       String   @default("TWD")
+  dateFormat     String   @default("YYYY/MM/DD")
+  timezone       String   @default("UTC+8")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// §3.3 角色管理（RBAC）
+// ═══════════════════════════════════════════════════════════════════════════
+
+/// 角色定義。
+/// - isSystem = true 時為內建 Super Admin，不可修改／刪除。
+/// - 自訂角色由管理者新增，權限明細存於 RolePermission。
+model Role {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?
+  isSystem    Boolean  @default(false) // Super Admin = true
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  users       User[]
+  permissions RolePermission[]
+}
+
+/// 角色權限。
+/// 採「明列授權」：表中存在 (roleId, module, action) 即代表授權，反之為未授權。
+/// Super Admin 視為擁有所有權限，不需在此表展開（service layer 直接放行）。
+model RolePermission {
+  id     String           @id @default(cuid())
+  roleId String
+  module ModuleKey
+  action PermissionAction
+
+  role Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@unique([roleId, module, action])
+  @@index([roleId])
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// §3.4 通知與提醒設定
+// ═══════════════════════════════════════════════════════════════════════════
+
+/// 通知管道全域設定（singleton）。
+model NotificationChannelSettings {
+  id                 String   @id @default("singleton")
+  emailSenderName    String
+  emailSenderAddress String
+  emailEnabled       Boolean  @default(true)
+  inAppEnabled       Boolean  @default(true)
+  updatedAt          DateTime @updatedAt
+}
+
+/// 觸發事件模板：系統預先定義 8 個事件，可編輯名稱、啟用／停用，但不可新增。
+/// 以 eventKey 為唯一鍵，seed 時自動寫入 8 筆。
+model NotificationEventTemplate {
+  id          String                @id @default(cuid())
+  eventKey    NotificationEventKey  @unique
+  eventType   NotificationEventType
+  displayName String // 管理者可編輯顯示名稱
+  enabled     Boolean               @default(true)
+  updatedAt   DateTime              @updatedAt
+
+  rules NotificationRule[]
+}
+
+/// 通知規則：使用者針對某事件設定的通知發送配置。
+model NotificationRule {
+  id           String               @id @default(cuid())
+  eventKey     NotificationEventKey
+  daysOffset   Int? // 時間型才需要；正值＝提前 N 天，負值＝延後 N 天
+  emailEnabled Boolean              @default(false)
+  inAppEnabled Boolean              @default(false)
+  title        String
+  body         String               @db.Text
+  enabled      Boolean              @default(true)
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
+
+  template   NotificationEventTemplate   @relation(fields: [eventKey], references: [eventKey], onDelete: Cascade)
+  recipients NotificationRuleRecipient[]
+
+  @@index([eventKey])
+}
+
+/// 通知規則 ↔ 接收帳號（m2m）
+model NotificationRuleRecipient {
+  ruleId String
+  userId String
+
+  rule NotificationRule @relation(fields: [ruleId], references: [id], onDelete: Cascade)
+  user User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([ruleId, userId])
+  @@index([userId])
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// §3.5 收款方式管理
+// ═══════════════════════════════════════════════════════════════════════════
+
+/// 收款銀行帳號。
+model BankAccount {
+  id            String   @id @default(cuid())
+  bankName      String // 銀行名稱
+  branchName    String // 分行名稱
+  accountNumber String
+  accountHolder String // 戶名
+  note          String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  billingTerms BillingTerms[]
+}
+
+/// 收款方式種類（現金、匯款、信用卡 …）。
+model PaymentMethodCategory {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  note      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  billingTerms   BillingTerms[]
+  paymentRecords PaymentRecord[]
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// §3.6–3.10 各種類資料表
+// ═══════════════════════════════════════════════════════════════════════════
+
+model PropertyType {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  properties Property[]
+}
+
+model IncomeType {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  // 收入紀錄目前由 PaymentRecord 涵蓋；若未來新增獨立收入紀錄表，
+  // 再加上反向關聯。Phase 6 再評估。
+}
+
+model ExpenseType {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  expenses Expense[]
+}
+
+model EquipmentType {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  equipmentItems EquipmentItem[]
+}
+
+model CommunicationTag {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  logs CommunicationLogTag[]
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// §3.11 Audit Log
+// ═══════════════════════════════════════════════════════════════════════════
+
+/// 稽核紀錄。
+/// - 系統自動寫入，不允許人工修改／刪除（應用層強制）。
+/// - 保存 3 個月，逾期由排程任務清除（Phase 8 實作）。
+model AuditLog {
+  id         String      @id @default(cuid())
+  timestamp  DateTime    @default(now())
+  userId     String?
+  module     ModuleKey?
+  action     AuditAction
+  targetType String? // e.g. "Property", "Contract"
+  targetId   String?
+  changes    Json? // { before: {...}, after: {...} }
+  ipAddress  String?
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([timestamp])
+  @@index([userId])
+  @@index([module, action])
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// §4 房產管理
+// ═══════════════════════════════════════════════════════════════════════════
 
 model Property {
-  id          String         @id @default(cuid())
-  title       String
-  description String?        @db.Text
-  address     String
-  city        String
-  district    String?
-  zipCode     String?
-  rent        Decimal        @db.Decimal(10, 2)
-  deposit     Decimal        @db.Decimal(10, 2)
-  area        Float?
-  rooms       Int            @default(1)
-  bathrooms   Int            @default(1)
-  floor       Int?
-  totalFloors Int?
-  status      PropertyStatus @default(AVAILABLE)
-  images      String[]
-  landlordId  String
-  createdAt   DateTime       @default(now())
-  updatedAt   DateTime       @updatedAt
+  id             String   @id @default(cuid())
+  name           String
+  propertyTypeId String
+  city           String // 縣市
+  district       String // 行政區
+  address        String
+  buildYear      Int?
+  totalFloors    Int?
+  images         String[] // URL 陣列
+  note           String?  @db.Text
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
-  landlord  User       @relation("LandlordProperties", fields: [landlordId], references: [id])
-  contracts Contract[]
+  propertyType PropertyType @relation(fields: [propertyTypeId], references: [id], onDelete: Restrict)
+  units        Unit[]
+  expenses     Expense[]
+
+  @@index([propertyTypeId])
 }
+
+model Unit {
+  id           String      @id @default(cuid())
+  propertyId   String
+  number       String // 房間編號（同 propertyId 內不可重複）
+  floor        Int
+  type         UnitType
+  area         Float? // 坪數
+  baseRent     Decimal     @db.Decimal(10, 2)
+  /// 手動覆寫狀態：目前僅 MAINTENANCE 由管理者手動設定；其他狀態為系統依合約自動推算。
+  /// null = 採系統自動判斷。
+  manualStatus UnitStatus?
+  images       String[]
+  note         String?     @db.Text
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  property          Property           @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  contracts         Contract[]
+  expenses          Expense[]
+  communicationLogs CommunicationLog[]
+
+  @@unique([propertyId, number])
+  @@index([propertyId])
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// §5 房客管理
+// ═══════════════════════════════════════════════════════════════════════════
+
+model Tenant {
+  id                    String   @id @default(cuid())
+  name                  String
+  idNumber              String   @unique // 身分證字號
+  phone                 String
+  email                 String?
+  emergencyContactName  String?
+  emergencyContactPhone String?
+  photoUrl              String? // 房客個人照
+  idPhotoFrontUrl       String? // 證件正面
+  idPhotoBackUrl        String? // 證件反面
+  note                  String?  @db.Text
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  contracts         Contract[]
+  communicationLogs CommunicationLog[]
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// §6 合約管理
+// ═══════════════════════════════════════════════════════════════════════════
 
 model Contract {
-  id         String         @id @default(cuid())
-  propertyId String
-  tenantId   String
-  startDate  DateTime
-  endDate    DateTime
-  rentAmount Decimal        @db.Decimal(10, 2)
-  deposit    Decimal        @db.Decimal(10, 2)
-  status     ContractStatus @default(ACTIVE)
-  terms      String?        @db.Text
-  createdAt  DateTime       @default(now())
-  updatedAt  DateTime       @updatedAt
+  id           String          @id @default(cuid())
+  unitId       String
+  tenantId     String
+  startDate    DateTime
+  endDate      DateTime
+  signedDate   DateTime
+  /// 手動覆寫狀態：僅 TERMINATED / COMPLETED 由管理者手動設定；ACTIVE / EXPIRED 自動推算。
+  manualStatus ContractStatus?
+  pdfUrl       String // 合約 PDF 掃描檔
+  note         String?         @db.Text
 
-  property Property  @relation(fields: [propertyId], references: [id])
-  tenant   User      @relation("TenantContracts", fields: [tenantId], references: [id])
-  payments Payment[]
+  // §6.3 簽約人資料（內嵌欄位）
+  signatorySameAsTenant Boolean @default(true)
+  signatoryName         String
+  signatoryIdNumber     String
+  signatoryPhone        String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  unit           Unit            @relation(fields: [unitId], references: [id], onDelete: Restrict)
+  tenant         Tenant          @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+  billingTerms   BillingTerms?
+  equipmentItems EquipmentItem[]
+  invoices       Invoice[]
+
+  @@index([unitId])
+  @@index([tenantId])
 }
 
-model Payment {
-  id         String        @id @default(cuid())
-  contractId String
-  amount     Decimal       @db.Decimal(10, 2)
-  dueDate    DateTime
-  paidDate   DateTime?
-  status     PaymentStatus @default(PENDING)
-  note       String?
-  createdAt  DateTime      @default(now())
-  updatedAt  DateTime      @updatedAt
+/// 租金條件（1:1，分表存放以保持 Contract 主表精簡）。
+model BillingTerms {
+  id                   String    @id @default(cuid())
+  contractId           String    @unique
+  actualRent           Decimal   @db.Decimal(10, 2)
+  rentDueDay           Int // 每月幾號收租（1-31）
+  paymentMethodId      String
+  bankAccountId        String?
+  depositAmount        Decimal?  @db.Decimal(10, 2)
+  depositReceivedDate  DateTime?
+  waterUnitPrice       Decimal?  @db.Decimal(10, 2) // NT$/度
+  electricityUnitPrice Decimal?  @db.Decimal(10, 2)
+  managementFee        Decimal?  @db.Decimal(10, 2)
+  updatedAt            DateTime  @updatedAt
 
-  contract Contract @relation(fields: [contractId], references: [id])
+  contract      Contract              @relation(fields: [contractId], references: [id], onDelete: Cascade)
+  paymentMethod PaymentMethodCategory @relation(fields: [paymentMethodId], references: [id], onDelete: Restrict)
+  bankAccount   BankAccount?          @relation(fields: [bankAccountId], references: [id], onDelete: Restrict)
+}
+
+/// 設備清單項目（一個合約多筆）。
+model EquipmentItem {
+  id              String             @id @default(cuid())
+  contractId      String
+  equipmentTypeId String
+  quantity        Int
+  condition       EquipmentCondition
+  photos          String[]
+  note            String?
+
+  contract      Contract      @relation(fields: [contractId], references: [id], onDelete: Cascade)
+  equipmentType EquipmentType @relation(fields: [equipmentTypeId], references: [id], onDelete: Restrict)
+
+  @@index([contractId])
+  @@index([equipmentTypeId])
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// §7 租金管理
+// ═══════════════════════════════════════════════════════════════════════════
+
+/// 帳單。
+/// - 系統自動於收租日前 7 天產生（Vercel Cron，Phase 6）。
+/// - 固定費用（actualRent、managementFee、單價）為產生當下從合約 snapshot 過來，
+///   合約後續變動不影響已產生帳單。
+/// - 度數由管理者手動填入，金額為系統計算。
+model Invoice {
+  id         String @id @default(cuid())
+  contractId String
+  /// 反正規化便於列表查詢與篩選（合約變更時不需 join 多表）。
+  unitId     String
+  tenantId   String
+
+  billingPeriodStart DateTime
+  billingPeriodEnd   DateTime
+  dueDate            DateTime
+
+  // 從合約 snapshot
+  rentAmount           Decimal  @db.Decimal(10, 2)
+  managementFee        Decimal? @db.Decimal(10, 2)
+  waterUnitPrice       Decimal? @db.Decimal(10, 2)
+  electricityUnitPrice Decimal? @db.Decimal(10, 2)
+
+  // 管理者填入
+  waterMeterReading       Decimal? @db.Decimal(10, 2)
+  electricityMeterReading Decimal? @db.Decimal(10, 2)
+
+  // 系統計算
+  waterAmount       Decimal? @db.Decimal(10, 2)
+  electricityAmount Decimal? @db.Decimal(10, 2)
+  totalAmount       Decimal  @db.Decimal(10, 2)
+
+  status InvoiceStatus @default(UNPAID)
+  note   String?       @db.Text
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  contract       Contract        @relation(fields: [contractId], references: [id], onDelete: Restrict)
+  paymentRecords PaymentRecord[]
+
+  @@index([contractId])
+  @@index([unitId])
+  @@index([tenantId])
+  @@index([dueDate])
+  @@index([status])
+}
+
+/// 收款紀錄。
+/// 一張帳單可有多筆收款紀錄（部分收款累計）。
+model PaymentRecord {
+  id              String   @id @default(cuid())
+  invoiceId       String
+  paymentDate     DateTime
+  amount          Decimal  @db.Decimal(10, 2)
+  paymentMethodId String
+  note            String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  invoice       Invoice               @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  paymentMethod PaymentMethodCategory @relation(fields: [paymentMethodId], references: [id], onDelete: Restrict)
+
+  @@index([invoiceId])
+  @@index([paymentDate])
+}
+
+/// 支出紀錄（SPEC §7.4）。
+model Expense {
+  id            String       @id @default(cuid())
+  expenseTypeId String
+  expenseDate   DateTime
+  amount        Decimal      @db.Decimal(10, 2)
+  propertyId    String
+  level         ExpenseLevel
+  unitId        String? // level = UNIT 時必填（service layer 驗證）
+  receiptUrl    String?
+  note          String?      @db.Text
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  expenseType ExpenseType @relation(fields: [expenseTypeId], references: [id], onDelete: Restrict)
+  property    Property    @relation(fields: [propertyId], references: [id], onDelete: Restrict)
+  unit        Unit?       @relation(fields: [unitId], references: [id], onDelete: Restrict)
+
+  @@index([propertyId])
+  @@index([unitId])
+  @@index([expenseDate])
+  @@index([expenseTypeId])
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// §8 溝通與維修
+// ═══════════════════════════════════════════════════════════════════════════
+
+model CommunicationLog {
+  id                String              @id @default(cuid())
+  unitId            String
+  tenantId          String
+  communicationDate DateTime
+  content           String              @db.Text
+  attachmentUrl     String?
+  status            CommunicationStatus @default(PENDING)
+  note              String?             @db.Text
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+
+  unit   Unit                  @relation(fields: [unitId], references: [id], onDelete: Restrict)
+  tenant Tenant                @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+  tags   CommunicationLogTag[]
+
+  @@index([unitId])
+  @@index([tenantId])
+  @@index([communicationDate])
+  @@index([status])
+}
+
+/// 溝通紀錄 ↔ 溝通標籤（m2m）。
+model CommunicationLogTag {
+  logId String
+  tagId String
+
+  log CommunicationLog @relation(fields: [logId], references: [id], onDelete: Cascade)
+  tag CommunicationTag @relation(fields: [tagId], references: [id], onDelete: Restrict)
+
+  @@id([logId, tagId])
+  @@index([tagId])
 }
