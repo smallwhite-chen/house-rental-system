@@ -1,7 +1,6 @@
 import type { ReactNode } from "react";
-import { redirect } from "next/navigation";
-import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { requireUserContext } from "@/lib/rbac";
 import { TopAppBar } from "@/components/layout/TopAppBar";
 import { Sidebar } from "@/components/layout/Sidebar";
 
@@ -11,53 +10,36 @@ const FALLBACK_COMPANY_NAME = "房屋租賃管理系統";
  * (dashboard) route group layout — 登入後主框架。
  *
  * 流程：
- *   1. 驗證 session，未登入導向 /signin
- *   2. 從 DB 撈出使用者完整資料（含角色名稱）
- *   3. 從 DB 撈 CompanySettings（singleton），無資料則用 fallback
- *   4. 渲染 TopAppBar + Sidebar + 內容區
+ *   1. requireUserContext() 取得使用者資料（內含 role + permissions），
+ *      未登入或被停用會自動 redirect 到 /signin。
+ *      該函式用 React cache()，layout + page 共用一份結果，DB 只查一次。
+ *   2. 並行抓 CompanySettings；無資料則 fallback。
+ *   3. 渲染 TopAppBar + Sidebar + 內容區。
  *
- * 注意：此 layout 跑在每次 dashboard 頁面 request，相當於全域權限守衛。
- * Phase 2.3 會再加上 RBAC permission 檢查（依路徑判定 module 並查 RolePermission）。
+ * 注意：此 layout 是「驗證有 session」的守衛，並非「驗證有特定模組權限」的守衛。
+ *      模組權限檢查由各模組頁面自行呼叫 requirePermission(MODULE, ACTION)。
  */
 export default async function DashboardLayout({
   children,
 }: {
   children: ReactNode;
 }) {
-  const session = await auth();
-  if (!session?.user?.id) {
-    redirect("/signin");
-  }
-
-  const [user, companySettings] = await Promise.all([
-    prisma.user.findUnique({
-      where: { id: session.user.id },
-      select: {
-        name: true,
-        email: true,
-        status: true,
-        role: { select: { name: true } },
-      },
-    }),
+  const [ctx, companySettings] = await Promise.all([
+    requireUserContext(),
     prisma.companySettings.findUnique({
       where: { id: "singleton" },
       select: { companyName: true },
     }),
   ]);
 
-  // 使用者在 session 還在但 DB 已刪除，或被停用時，強制登出
-  if (!user || user.status !== "ACTIVE") {
-    redirect("/signin");
-  }
-
   return (
     <div className="flex h-screen flex-col bg-surface-container">
       <TopAppBar
         companyName={companySettings?.companyName ?? FALLBACK_COMPANY_NAME}
         user={{
-          name: user.name,
-          email: user.email,
-          roleName: user.role.name,
+          name: ctx.name,
+          email: ctx.email,
+          roleName: ctx.role.name,
         }}
       />
       <div className="flex flex-1 overflow-hidden">

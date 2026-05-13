@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
-import { auth } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
+import { requireUserContext } from "@/lib/rbac";
 
 export const metadata: Metadata = {
   title: "Dashboard ｜ 房屋租賃管理系統",
@@ -9,7 +8,9 @@ export const metadata: Metadata = {
 /**
  * Dashboard 首頁。
  *
- * Phase 2.2：暫時顯示歡迎卡 + 模組進度。
+ * Phase 2.3：使用 requireUserContext() 取得使用者資料；該函式以 React cache 共用 layout
+ * 的查詢結果，不會多打一次 DB。
+ *
  * Phase 8 會回頭實作（規格 §10）：
  *   - 出租狀況總覽
  *   - 本月收租狀況
@@ -17,18 +18,13 @@ export const metadata: Metadata = {
  *   - 待處理溝通事項
  */
 export default async function DashboardPage() {
-  const session = await auth();
-  // layout 已驗證過 session，這邊單純取資料；session 必定存在。
-  const user = await prisma.user.findUnique({
-    where: { id: session!.user.id },
-    select: { name: true, role: { select: { name: true } } },
-  });
+  const ctx = await requireUserContext();
 
   return (
     <div className="space-y-6">
       <header>
         <h1 className="text-3xl font-medium text-on-surface">
-          歡迎回來，{user?.name}
+          歡迎回來，{ctx.name}
         </h1>
         <p className="mt-1 text-sm text-on-surface-variant">
           目前系統處於開發階段，各模組將依規劃陸續上線。
@@ -38,7 +34,7 @@ export default async function DashboardPage() {
       <div className="rounded-2xl bg-primary-container p-6 text-on-primary-container">
         <h2 className="text-lg font-medium">系統就緒</h2>
         <p className="mt-2 text-sm">
-          資料庫已建好（30 個資料表）、Super Admin 已建立、登入流程已上線。
+          資料庫已建好（30 個資料表）、Super Admin 已建立、登入流程已上線、RBAC 引擎已就位。
           可使用左側選單瀏覽各模組。
         </p>
       </div>

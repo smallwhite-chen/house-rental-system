@@ -5,6 +5,7 @@ import GoogleProvider from "next-auth/providers/google";
 import GitHubProvider from "next-auth/providers/github";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
+import { logAudit } from "@/lib/audit";
 
 /**
  * Provider 啟用策略：
@@ -81,6 +82,32 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         session.user.id = token.sub;
       }
       return session;
+    },
+  },
+  events: {
+    /**
+     * 登入成功時記錄稽核日誌（SPEC §3.11）。
+     * authorize() 內已驗證帳密，事件觸發時 user 必定有效。
+     */
+    async signIn({ user }) {
+      if (user?.id) {
+        await logAudit({ userId: user.id, action: "LOGIN" });
+      }
+    },
+    /**
+     * 登出時記錄稽核日誌。
+     * JWT strategy 下 signOut 事件帶 token，session strategy 才帶 session。
+     */
+    async signOut(message) {
+      const userId =
+        "token" in message && message.token?.sub
+          ? message.token.sub
+          : "session" in message && message.session?.userId
+            ? message.session.userId
+            : undefined;
+      if (userId) {
+        await logAudit({ userId, action: "LOGOUT" });
+      }
     },
   },
 });
