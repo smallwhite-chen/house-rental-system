@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
-import { auth } from "@/lib/auth";
+import { getCurrentUserContext } from "@/lib/rbac";
 import { SignInForm } from "./signin-form";
 
 export const metadata: Metadata = {
@@ -15,8 +15,11 @@ export const metadata: Metadata = {
  *   （避免將 process.env 暴露到 client bundle）
  */
 export default async function SignInPage() {
-  const session = await auth();
-  if (session?.user) {
+  // 用 getCurrentUserContext 而非 auth()：前者會檢查 DB 狀態，
+  // 對於 session 仍有效但 User.status = DISABLED 的情況回傳 null，
+  // 避免 dashboard layout 把 disabled 使用者導回 /signin 後又被導去 /dashboard 形成迴圈。
+  const ctx = await getCurrentUserContext();
+  if (ctx) {
     redirect("/dashboard");
   }
 

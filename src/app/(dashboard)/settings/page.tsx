@@ -62,7 +62,7 @@ const SETTINGS_MODULES: ReadonlyArray<SettingsModule> = [
   {
     title: "帳號管理",
     description: "新增、停用使用者帳號與指派角色",
-    href: null,
+    href: "/settings/accounts",
     plannedPhase: "Phase 2.5",
     icon: (
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className={ICON_CLASS} aria-hidden="true">
