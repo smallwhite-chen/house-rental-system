@@ -73,7 +73,7 @@ const SETTINGS_MODULES: ReadonlyArray<SettingsModule> = [
   {
     title: "角色管理",
     description: "建立自訂角色與細粒度權限設定",
-    href: null,
+    href: "/settings/roles",
     plannedPhase: "Phase 2.6",
     icon: (
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className={ICON_CLASS} aria-hidden="true">
@@ -85,7 +85,7 @@ const SETTINGS_MODULES: ReadonlyArray<SettingsModule> = [
     title: "通知與提醒設定",
     description: "Email / 系統內通知規則、觸發事件設定",
     href: null,
-    plannedPhase: "Phase 2.8",
+    plannedPhase: "Phase 2.8（待開發）",
     icon: (
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className={ICON_CLASS} aria-hidden="true">
         <path fillRule="evenodd" d="M5.25 9a6.75 6.75 0 0 1 13.5 0v.75c0 2.123.8 4.057 2.118 5.52a.75.75 0 0 1-.297 1.206c-1.544.57-3.16.99-4.831 1.243a3.75 3.75 0 1 1-7.48 0 24.585 24.585 0 0 1-4.831-1.244.75.75 0 0 1-.298-1.205A8.217 8.217 0 0 0 5.25 9.75V9Zm4.502 8.9a2.25 2.25 0 1 0 4.496 0 25.057 25.057 0 0 1-4.496 0Z" clipRule="evenodd" />
@@ -95,7 +95,7 @@ const SETTINGS_MODULES: ReadonlyArray<SettingsModule> = [
   {
     title: "收款方式管理",
     description: "銀行帳號與收款方式種類",
-    href: null,
+    href: "/settings/payment-methods",
     plannedPhase: "Phase 2.7",
     icon: (
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className={ICON_CLASS} aria-hidden="true">
@@ -107,7 +107,7 @@ const SETTINGS_MODULES: ReadonlyArray<SettingsModule> = [
   {
     title: "房產種類管理",
     description: "新增、編輯房產類型（如：住宅、商辦）",
-    href: null,
+    href: "/settings/property-types",
     plannedPhase: "Phase 2.7",
     icon: (
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className={ICON_CLASS} aria-hidden="true">
@@ -119,7 +119,7 @@ const SETTINGS_MODULES: ReadonlyArray<SettingsModule> = [
   {
     title: "收入種類管理",
     description: "新增、編輯收入分類",
-    href: null,
+    href: "/settings/income-types",
     plannedPhase: "Phase 2.7",
     icon: (
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className={ICON_CLASS} aria-hidden="true">
@@ -130,7 +130,7 @@ const SETTINGS_MODULES: ReadonlyArray<SettingsModule> = [
   {
     title: "支出種類管理",
     description: "新增、編輯支出分類",
-    href: null,
+    href: "/settings/expense-types",
     plannedPhase: "Phase 2.7",
     icon: (
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className={ICON_CLASS} aria-hidden="true">
@@ -141,7 +141,7 @@ const SETTINGS_MODULES: ReadonlyArray<SettingsModule> = [
   {
     title: "設備種類管理",
     description: "管理房間配備清單可選項",
-    href: null,
+    href: "/settings/equipment-types",
     plannedPhase: "Phase 2.7",
     icon: (
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className={ICON_CLASS} aria-hidden="true">
@@ -154,7 +154,7 @@ const SETTINGS_MODULES: ReadonlyArray<SettingsModule> = [
   {
     title: "溝通標籤管理",
     description: "為溝通紀錄建立可重複使用的標籤",
-    href: null,
+    href: "/settings/communication-tags",
     plannedPhase: "Phase 2.7",
     icon: (
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className={ICON_CLASS} aria-hidden="true">
@@ -165,7 +165,7 @@ const SETTINGS_MODULES: ReadonlyArray<SettingsModule> = [
   {
     title: "稽核紀錄",
     description: "檢視系統操作記錄（保留 3 個月）",
-    href: null,
+    href: "/settings/audit-log",
     plannedPhase: "Phase 2.9",
     icon: (
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className={ICON_CLASS} aria-hidden="true">
