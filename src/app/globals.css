@@ -92,3 +92,29 @@ body {
   background: var(--md-sys-color-background);
   color: var(--md-sys-color-on-background);
 }
+
+/* ─── 列印樣式（財務報表 PDF 匯出用） ─────────────────────────────────── */
+@media print {
+  /* 隱藏 Sidebar、TopAppBar、breadcrumb、按鈕等 */
+  aside, header.h-14 {
+    display: none !important;
+  }
+  /* 全頁滿版輸出 */
+  main, .overflow-y-auto, .max-w-7xl {
+    overflow: visible !important;
+    max-width: none !important;
+    padding: 0 !important;
+  }
+  /* 卡片留邊框便於辨識 */
+  .ring-1 {
+    box-shadow: 0 0 0 1px #c0c9c1 !important;
+  }
+  /* 避免區塊跨頁切斷 */
+  section, table {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+  body {
+    background: white !important;
+  }
+}

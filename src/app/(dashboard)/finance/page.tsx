@@ -69,9 +69,9 @@ export default async function FinanceHubPage() {
         <Card
           title="財務報表"
           description="收入、支出、損益報表（含圖表）。"
-          href={null}
+          href="/finance/reports"
           phase="Phase 6c"
-          available={false}
+          available
           icon={<ChartIcon />}
         />
       </div>
