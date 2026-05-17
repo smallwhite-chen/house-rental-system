@@ -6,7 +6,9 @@ import { requirePermission, hasPermission } from "@/lib/rbac";
 import { StatusChip } from "@/components/ui/StatusChip";
 import { computeContractStatus, CONTRACT_STATUS_META } from "@/lib/contract-status";
 import { ContractActionButtons } from "./contract-actions";
+import { GenerateInvoiceButton } from "./generate-invoice-button";
 import { terminateContract, completeContract, deleteContract } from "../actions";
+import { createInvoiceFromContract } from "@/app/(dashboard)/finance/invoices/actions";
 import type { EquipmentCondition } from "@/generated/prisma/client";
 
 export const metadata: Metadata = {
@@ -85,12 +87,18 @@ export default async function ContractDetailPage({
         </div>
         <div className="flex flex-wrap gap-2">
           {canEdit && status !== "TERMINATED" && status !== "COMPLETED" && (
-            <Link
-              href={`/contracts/${contract.id}/edit`}
-              className="inline-flex h-10 items-center gap-2 rounded-full bg-secondary-container px-6 text-sm font-medium text-on-secondary-container hover:bg-secondary-container/80"
-            >
-              編輯
-            </Link>
+            <>
+              <GenerateInvoiceButton
+                contractId={contract.id}
+                generateAction={createInvoiceFromContract}
+              />
+              <Link
+                href={`/contracts/${contract.id}/edit`}
+                className="inline-flex h-10 items-center gap-2 rounded-full bg-secondary-container px-6 text-sm font-medium text-on-secondary-container hover:bg-secondary-container/80"
+              >
+                編輯
+              </Link>
+            </>
           )}
           <ContractActionButtons
             contractId={contract.id}
