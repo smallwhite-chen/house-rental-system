@@ -4,6 +4,8 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { TextInput } from "@/components/ui/TextInput";
 import { FormField } from "@/components/ui/FormField";
+import { FileUpload } from "@/components/ui/FileUpload";
+import { uploadFileAction } from "@/app/actions/upload";
 
 export type TenantFormInitial = {
   name?: string;
@@ -13,6 +15,9 @@ export type TenantFormInitial = {
   emergencyContactName?: string | null;
   emergencyContactPhone?: string | null;
   note?: string | null;
+  photoUrl?: string | null;
+  idPhotoFrontUrl?: string | null;
+  idPhotoBackUrl?: string | null;
 };
 
 type Props = {
@@ -92,6 +97,45 @@ export function TenantForm({ initial = {}, submitLabel, onSubmit, nextPath }: Pr
               name="emergencyContactPhone"
               defaultValue={initial.emergencyContactPhone ?? ""}
               placeholder="選填"
+            />
+          </FormField>
+        </div>
+      </div>
+
+      <div className="space-y-4 rounded-2xl bg-surface p-6 ring-1 ring-outline-variant">
+        <div>
+          <h2 className="text-lg font-medium text-on-surface">房客照片</h2>
+          <p className="text-sm text-on-surface-variant">皆為選填；JPG / PNG / WebP，最大 5 MB。</p>
+        </div>
+        <div className="grid gap-4 md:grid-cols-3">
+          <FormField label="個人照" htmlFor="photoUrl">
+            <FileUpload
+              name="photoUrl"
+              prefix="tenants"
+              kind="image"
+              defaultUrl={initial.photoUrl}
+              label="點擊或拖入"
+              uploadAction={uploadFileAction}
+            />
+          </FormField>
+          <FormField label="證件正面" htmlFor="idPhotoFrontUrl">
+            <FileUpload
+              name="idPhotoFrontUrl"
+              prefix="tenants"
+              kind="image"
+              defaultUrl={initial.idPhotoFrontUrl}
+              label="點擊或拖入"
+              uploadAction={uploadFileAction}
+            />
+          </FormField>
+          <FormField label="證件反面" htmlFor="idPhotoBackUrl">
+            <FileUpload
+              name="idPhotoBackUrl"
+              prefix="tenants"
+              kind="image"
+              defaultUrl={initial.idPhotoBackUrl}
+              label="點擊或拖入"
+              uploadAction={uploadFileAction}
             />
           </FormField>
         </div>

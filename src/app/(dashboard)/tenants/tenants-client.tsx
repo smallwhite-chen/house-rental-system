@@ -11,6 +11,7 @@ type TenantRow = {
   phone: string;
   email: string | null;
   idNumberMasked: string;
+  photoUrl: string | null;
   status: TenantStatus;
   currentUnitLabel: string | null;
   contractCount: number;
@@ -148,9 +149,7 @@ function CardView({ tenants }: { tenants: TenantRow[] }) {
           >
             <div className="flex items-start justify-between">
               <div className="flex items-center gap-3">
-                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary-container text-on-primary-container">
-                  <UserIcon />
-                </div>
+                <TenantAvatar name={t.name} photoUrl={t.photoUrl} size={48} />
                 <div>
                   <p className="font-medium text-on-surface">{t.name}</p>
                   <p className="text-xs text-on-surface-variant font-mono">{t.idNumberMasked}</p>
@@ -262,5 +261,41 @@ function UserIcon() {
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-6 w-6" aria-hidden="true">
       <path fillRule="evenodd" d="M10 9a3 3 0 1 0 0-6 3 3 0 0 0 0 6Zm-7 9a7 7 0 1 1 14 0H3Z" clipRule="evenodd" />
     </svg>
+  );
+}
+
+/**
+ * 房客頭像：有 photoUrl 就顯示圖片，否則 fallback 為通用人形 icon。
+ * size 為直徑（px），統一頭像/容器大小。
+ */
+function TenantAvatar({
+  name,
+  photoUrl,
+  size = 48,
+}: {
+  name: string;
+  photoUrl: string | null;
+  size?: number;
+}) {
+  if (photoUrl) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={photoUrl}
+        alt={`${name} 的個人照`}
+        width={size}
+        height={size}
+        className="rounded-full object-cover ring-1 ring-outline-variant"
+        style={{ width: size, height: size }}
+      />
+    );
+  }
+  return (
+    <div
+      className="flex items-center justify-center rounded-full bg-primary-container text-on-primary-container"
+      style={{ width: size, height: size }}
+    >
+      <UserIcon />
+    </div>
   );
 }

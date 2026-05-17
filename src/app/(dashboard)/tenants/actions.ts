@@ -16,6 +16,9 @@ type TenantFormData = {
   emergencyContactName: string | null;
   emergencyContactPhone: string | null;
   note: string | null;
+  photoUrl: string | null;
+  idPhotoFrontUrl: string | null;
+  idPhotoBackUrl: string | null;
 };
 
 function parseForm(fd: FormData): TenantFormData | { error: string } {
@@ -26,6 +29,9 @@ function parseForm(fd: FormData): TenantFormData | { error: string } {
   const emergencyContactName = (fd.get("emergencyContactName") as string)?.trim() || null;
   const emergencyContactPhone = (fd.get("emergencyContactPhone") as string)?.trim() || null;
   const note = (fd.get("note") as string)?.trim() || null;
+  const photoUrl = (fd.get("photoUrl") as string)?.trim() || null;
+  const idPhotoFrontUrl = (fd.get("idPhotoFrontUrl") as string)?.trim() || null;
+  const idPhotoBackUrl = (fd.get("idPhotoBackUrl") as string)?.trim() || null;
 
   if (!name) return { error: "姓名為必填" };
   if (!idNumber) return { error: "身分證字號為必填" };
@@ -35,7 +41,18 @@ function parseForm(fd: FormData): TenantFormData | { error: string } {
     return { error: "Email 格式不正確" };
   }
 
-  return { name, idNumber, phone, email, emergencyContactName, emergencyContactPhone, note };
+  return {
+    name,
+    idNumber,
+    phone,
+    email,
+    emergencyContactName,
+    emergencyContactPhone,
+    note,
+    photoUrl,
+    idPhotoFrontUrl,
+    idPhotoBackUrl,
+  };
 }
 
 export async function createTenant(fd: FormData) {

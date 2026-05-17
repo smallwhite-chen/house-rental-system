@@ -41,6 +41,7 @@ export default async function TenantsPage() {
       phone: t.phone,
       email: t.email,
       idNumberMasked: maskIdNumber(t.idNumber),
+      photoUrl: t.photoUrl,
       status,
       currentUnitLabel: currentUnit
         ? `${currentUnit.propertyName} ${currentUnit.number}`

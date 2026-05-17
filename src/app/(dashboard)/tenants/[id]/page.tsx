@@ -58,9 +58,18 @@ export default async function TenantDetailPage({
 
       <header className="flex items-end justify-between">
         <div className="flex items-center gap-4">
-          <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary-container text-on-primary-container">
-            <UserIcon />
-          </div>
+          {tenant.photoUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={tenant.photoUrl}
+              alt={`${tenant.name} 的個人照`}
+              className="h-14 w-14 rounded-full object-cover ring-1 ring-outline-variant"
+            />
+          ) : (
+            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary-container text-on-primary-container">
+              <UserIcon />
+            </div>
+          )}
           <div>
             <div className="flex items-center gap-2">
               <h1 className="text-3xl font-medium text-on-surface">{tenant.name}</h1>

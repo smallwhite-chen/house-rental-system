@@ -50,6 +50,9 @@ export default async function EditTenantPage({
           emergencyContactName: tenant.emergencyContactName,
           emergencyContactPhone: tenant.emergencyContactPhone,
           note: tenant.note,
+          photoUrl: tenant.photoUrl,
+          idPhotoFrontUrl: tenant.idPhotoFrontUrl,
+          idPhotoBackUrl: tenant.idPhotoBackUrl,
         }}
         submitLabel="儲存變更"
         onSubmit={updateForThisTenant}

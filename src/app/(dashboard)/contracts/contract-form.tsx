@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/Button";
 import { TextInput } from "@/components/ui/TextInput";
 import { FormField } from "@/components/ui/FormField";
 import { Select, SelectChevron } from "@/components/ui/Select";
+import { FileUpload } from "@/components/ui/FileUpload";
+import { uploadFileAction } from "@/app/actions/upload";
 import type { EquipmentCondition } from "@/generated/prisma/client";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -338,14 +340,14 @@ export function ContractForm({
           <FormField label="簽約日期" htmlFor="signedDate" required>
             <TextInput id="signedDate" name="signedDate" type="date" defaultValue={initial.signedDate} required />
           </FormField>
-          <FormField label="合約 PDF URL" htmlFor="pdfUrl" required helper="Phase 6 storage 上線後將改為檔案上傳">
-            <TextInput
-              id="pdfUrl"
+          <FormField label="合約 PDF" htmlFor="pdfUrl" required>
+            <FileUpload
               name="pdfUrl"
-              type="url"
-              defaultValue={initial.pdfUrl}
-              placeholder="https://..."
-              required
+              prefix="contracts"
+              kind="pdf"
+              defaultUrl={initial.pdfUrl}
+              label="點擊或拖入合約 PDF 掃描檔"
+              uploadAction={uploadFileAction}
             />
           </FormField>
         </div>

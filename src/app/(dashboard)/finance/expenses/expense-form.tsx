@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/Button";
 import { TextInput } from "@/components/ui/TextInput";
 import { FormField } from "@/components/ui/FormField";
 import { Select } from "@/components/ui/Select";
+import { FileUpload } from "@/components/ui/FileUpload";
+import { uploadFileAction } from "@/app/actions/upload";
 import type { ExpenseLevel } from "@/generated/prisma/client";
 
 export type ExpenseTypeOpt = { id: string; name: string };
@@ -188,13 +190,14 @@ export function ExpenseForm({
       <section className="space-y-4 rounded-2xl bg-surface p-6 ring-1 ring-outline-variant">
         <h2 className="text-lg font-medium text-on-surface">其他</h2>
 
-        <FormField label="收據 URL" htmlFor="receiptUrl" helper="Phase 6 storage 上線後將改為圖片上傳">
-          <TextInput
-            id="receiptUrl"
+        <FormField label="收據 / 發票" htmlFor="receiptUrl">
+          <FileUpload
             name="receiptUrl"
-            type="url"
-            defaultValue={initial.receiptUrl ?? ""}
-            placeholder="https://..."
+            prefix="expenses"
+            kind="image"
+            defaultUrl={initial.receiptUrl}
+            label="點擊或拖入收據／發票圖片"
+            uploadAction={uploadFileAction}
           />
         </FormField>
 
