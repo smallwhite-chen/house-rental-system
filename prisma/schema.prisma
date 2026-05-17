@@ -164,6 +164,7 @@ model User {
   sessions          Session[]
   auditLogs         AuditLog[]
   notificationRules NotificationRuleRecipient[]
+  notifications     Notification[]
 
   @@index([roleId])
 }
@@ -301,10 +302,29 @@ model NotificationRule {
   createdAt    DateTime             @default(now())
   updatedAt    DateTime             @updatedAt
 
-  template   NotificationEventTemplate   @relation(fields: [eventKey], references: [eventKey], onDelete: Cascade)
-  recipients NotificationRuleRecipient[]
+  template      NotificationEventTemplate   @relation(fields: [eventKey], references: [eventKey], onDelete: Cascade)
+  recipients    NotificationRuleRecipient[]
+  notifications Notification[]
 
   @@index([eventKey])
+}
+
+/// 系統內通知（Phase 2.8b）— 寄達使用者的單筆通知紀錄。
+/// readAt = null 表示未讀；點擊或標記後填入時間。
+model Notification {
+  id        String    @id @default(cuid())
+  userId    String
+  ruleId    String? // 來自規則觸發；系統公告／測試發送可為 null
+  title     String
+  body      String    @db.Text
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  user User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  rule NotificationRule? @relation(fields: [ruleId], references: [id], onDelete: SetNull)
+
+  @@index([userId, readAt])
+  @@index([createdAt])
 }
 
 /// 通知規則 ↔ 接收帳號（m2m）

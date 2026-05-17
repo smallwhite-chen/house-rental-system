@@ -37,6 +37,7 @@ export default async function DashboardLayout({
       <TopAppBar
         companyName={companySettings?.companyName ?? FALLBACK_COMPANY_NAME}
         user={{
+          id: ctx.id,
           name: ctx.name,
           email: ctx.email,
           roleName: ctx.role.name,

@@ -1,21 +1,44 @@
 import Link from "next/link";
+import { prisma } from "@/lib/prisma";
 import { UserMenu } from "./UserMenu";
+import { NotificationBell, type NotificationItem } from "./NotificationBell";
+import { markAsRead } from "@/app/(dashboard)/notifications/actions";
 
 /**
  * Top App Bar — 高 56px (h-14)。
  *
- * 左側：Logo + 公司名稱（CompanySettings.companyName 或 fallback）
- * 右側：（未來）通知鈴鐺、UserMenu
+ * 左側：Logo + 公司名稱
+ * 右側：NotificationBell + UserMenu
  *
  * 由 (dashboard)/layout.tsx 渲染並從 session/db 取得使用者資料後傳入。
  */
-export function TopAppBar({
+export async function TopAppBar({
   companyName,
   user,
 }: {
   companyName: string;
-  user: { name: string; email: string; roleName: string };
+  user: { id: string; name: string; email: string; roleName: string };
 }) {
+  // 取最近 10 則通知 + 未讀總數（伺服端 fetch，配合 revalidatePath 即時更新）
+  const [recent, unreadCount] = await Promise.all([
+    prisma.notification.findMany({
+      where: { userId: user.id },
+      orderBy: { createdAt: "desc" },
+      take: 10,
+      include: { rule: { select: { template: { select: { displayName: true } } } } },
+    }),
+    prisma.notification.count({ where: { userId: user.id, readAt: null } }),
+  ]);
+
+  const items: NotificationItem[] = recent.map((n) => ({
+    id: n.id,
+    title: n.title,
+    body: n.body,
+    ruleName: n.rule?.template.displayName ?? null,
+    createdAt: n.createdAt.toISOString(),
+    read: n.readAt !== null,
+  }));
+
   return (
     <header className="flex h-14 shrink-0 items-center justify-between border-b border-outline-variant bg-surface px-6">
       <Link
@@ -37,7 +60,14 @@ export function TopAppBar({
         <span className="text-base font-medium text-on-surface">{companyName}</span>
       </Link>
 
-      <UserMenu name={user.name} email={user.email} roleName={user.roleName} />
+      <div className="flex items-center gap-1">
+        <NotificationBell
+          notifications={items}
+          unreadCount={unreadCount}
+          markAsReadAction={markAsRead}
+        />
+        <UserMenu name={user.name} email={user.email} roleName={user.roleName} />
+      </div>
     </header>
   );
 }
