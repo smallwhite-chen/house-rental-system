@@ -1,6 +1,7 @@
 "use client";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { useCallback } from "react";
+import { SelectChevron } from "@/components/ui/Select";
 
 type LogRow = {
   id: string;
@@ -68,29 +69,35 @@ export function AuditLogClient({ logs, users, total, page, totalPages, currentFi
       <div className="flex flex-wrap items-end gap-3 rounded-2xl bg-surface p-4 ring-1 ring-outline-variant">
         <div className="flex flex-col gap-1">
           <label className="text-xs font-medium text-on-surface-variant">操作類型</label>
-          <select
-            className="rounded-lg bg-surface-container-high px-3 py-2 text-sm text-on-surface ring-1 ring-outline focus:outline-none focus:ring-2 focus:ring-primary"
-            value={currentFilters.action ?? ""}
-            onChange={(e) => pushFilter({ action: e.target.value || undefined })}
-          >
-            {ACTION_OPTIONS.map((o) => (
-              <option key={o.value} value={o.value}>{o.label}</option>
-            ))}
-          </select>
+          <div className="relative">
+            <select
+              className="block w-full appearance-none rounded-lg bg-surface-container-high pl-3 pr-9 py-2 text-sm text-on-surface ring-1 ring-outline focus:outline-none focus:ring-2 focus:ring-primary"
+              value={currentFilters.action ?? ""}
+              onChange={(e) => pushFilter({ action: e.target.value || undefined })}
+            >
+              {ACTION_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>{o.label}</option>
+              ))}
+            </select>
+            <SelectChevron />
+          </div>
         </div>
 
         <div className="flex flex-col gap-1">
           <label className="text-xs font-medium text-on-surface-variant">帳號</label>
-          <select
-            className="rounded-lg bg-surface-container-high px-3 py-2 text-sm text-on-surface ring-1 ring-outline focus:outline-none focus:ring-2 focus:ring-primary"
-            value={currentFilters.userId ?? ""}
-            onChange={(e) => pushFilter({ userId: e.target.value || undefined })}
-          >
-            <option value="">全部帳號</option>
-            {users.map((u) => (
-              <option key={u.id} value={u.id}>{u.name}</option>
-            ))}
-          </select>
+          <div className="relative">
+            <select
+              className="block w-full appearance-none rounded-lg bg-surface-container-high pl-3 pr-9 py-2 text-sm text-on-surface ring-1 ring-outline focus:outline-none focus:ring-2 focus:ring-primary"
+              value={currentFilters.userId ?? ""}
+              onChange={(e) => pushFilter({ userId: e.target.value || undefined })}
+            >
+              <option value="">全部帳號</option>
+              {users.map((u) => (
+                <option key={u.id} value={u.id}>{u.name}</option>
+              ))}
+            </select>
+            <SelectChevron />
+          </div>
         </div>
 
         <div className="flex flex-col gap-1">

@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { TextInput } from "@/components/ui/TextInput";
 import { FormField } from "@/components/ui/FormField";
+import { SelectChevron } from "@/components/ui/Select";
 import type { UnitType } from "@/generated/prisma/client";
 
 export type UnitFormInitial = {
@@ -59,33 +60,39 @@ export function UnitForm({ propertyId, totalFloors, initial, submitLabel, onSubm
           </FormField>
 
           <FormField label="樓層" htmlFor="floor" required>
-            <select
-              id="floor"
-              name="floor"
-              defaultValue={initial?.floor ?? ""}
-              required
-              className="block w-full rounded-lg border-0 bg-surface px-4 py-3 text-on-surface ring-1 ring-inset ring-outline focus:outline-none focus:ring-2 focus:ring-primary"
-            >
-              <option value="" disabled>請選擇樓層</option>
-              {floorOptions.map((f) => (
-                <option key={f} value={f}>{f} 樓</option>
-              ))}
-            </select>
+            <div className="relative">
+              <select
+                id="floor"
+                name="floor"
+                defaultValue={initial?.floor ?? ""}
+                required
+                className="block w-full appearance-none rounded-lg border-0 bg-surface pl-4 pr-10 py-3 text-on-surface ring-1 ring-inset ring-outline focus:outline-none focus:ring-2 focus:ring-primary"
+              >
+                <option value="" disabled>請選擇樓層</option>
+                {floorOptions.map((f) => (
+                  <option key={f} value={f}>{f} 樓</option>
+                ))}
+              </select>
+              <SelectChevron />
+            </div>
           </FormField>
         </div>
 
         <div className="grid grid-cols-2 gap-4">
           <FormField label="房間類型" htmlFor="type" required>
-            <select
-              id="type"
-              name="type"
-              defaultValue={initial?.type ?? "SUITE"}
-              required
-              className="block w-full rounded-lg border-0 bg-surface px-4 py-3 text-on-surface ring-1 ring-inset ring-outline focus:outline-none focus:ring-2 focus:ring-primary"
-            >
-              <option value="SUITE">套房</option>
-              <option value="ROOM">雅房</option>
-            </select>
+            <div className="relative">
+              <select
+                id="type"
+                name="type"
+                defaultValue={initial?.type ?? "SUITE"}
+                required
+                className="block w-full appearance-none rounded-lg border-0 bg-surface pl-4 pr-10 py-3 text-on-surface ring-1 ring-inset ring-outline focus:outline-none focus:ring-2 focus:ring-primary"
+              >
+                <option value="SUITE">套房</option>
+                <option value="ROOM">雅房</option>
+              </select>
+              <SelectChevron />
+            </div>
           </FormField>
 
           <FormField label="坪數" htmlFor="area">

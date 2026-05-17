@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { TextInput } from "@/components/ui/TextInput";
 import { FormField } from "@/components/ui/FormField";
+import { SelectChevron } from "@/components/ui/Select";
 import { getCities, getDistricts } from "@/lib/taiwan-districts";
 
 type PropertyType = { id: string; name: string };
@@ -70,53 +71,62 @@ export function PropertyForm({ propertyTypes, initial, submitLabel, onSubmit }: 
               尚未建立任何房產種類，請先到「<a className="underline" href="/settings/property-types">系統設定 → 房產種類管理</a>」建立。
             </div>
           ) : (
-            <select
-              id="propertyTypeId"
-              name="propertyTypeId"
-              defaultValue={initial?.propertyTypeId ?? ""}
-              required
-              className="block w-full rounded-lg border-0 bg-surface px-4 py-3 text-on-surface ring-1 ring-inset ring-outline focus:outline-none focus:ring-2 focus:ring-primary"
-            >
-              <option value="" disabled>請選擇</option>
-              {propertyTypes.map((t) => (
-                <option key={t.id} value={t.id}>{t.name}</option>
-              ))}
-            </select>
+            <div className="relative">
+              <select
+                id="propertyTypeId"
+                name="propertyTypeId"
+                defaultValue={initial?.propertyTypeId ?? ""}
+                required
+                className="block w-full appearance-none rounded-lg border-0 bg-surface pl-4 pr-10 py-3 text-on-surface ring-1 ring-inset ring-outline focus:outline-none focus:ring-2 focus:ring-primary"
+              >
+                <option value="" disabled>請選擇</option>
+                {propertyTypes.map((t) => (
+                  <option key={t.id} value={t.id}>{t.name}</option>
+                ))}
+              </select>
+              <SelectChevron />
+            </div>
           )}
         </FormField>
 
         <div className="grid grid-cols-2 gap-4">
           <FormField label="縣市" htmlFor="city" required>
-            <select
-              id="city"
-              name="city"
-              value={city}
-              onChange={(e) => handleCityChange(e.target.value)}
-              required
-              className="block w-full rounded-lg border-0 bg-surface px-4 py-3 text-on-surface ring-1 ring-inset ring-outline focus:outline-none focus:ring-2 focus:ring-primary"
-            >
-              <option value="" disabled>請選擇縣市</option>
-              {cities.map((c) => (
-                <option key={c} value={c}>{c}</option>
-              ))}
-            </select>
+            <div className="relative">
+              <select
+                id="city"
+                name="city"
+                value={city}
+                onChange={(e) => handleCityChange(e.target.value)}
+                required
+                className="block w-full appearance-none rounded-lg border-0 bg-surface pl-4 pr-10 py-3 text-on-surface ring-1 ring-inset ring-outline focus:outline-none focus:ring-2 focus:ring-primary"
+              >
+                <option value="" disabled>請選擇縣市</option>
+                {cities.map((c) => (
+                  <option key={c} value={c}>{c}</option>
+                ))}
+              </select>
+              <SelectChevron />
+            </div>
           </FormField>
 
           <FormField label="行政區" htmlFor="district" required>
-            <select
-              id="district"
-              name="district"
-              value={district}
-              onChange={(e) => setDistrict(e.target.value)}
-              required
-              disabled={!city}
-              className="block w-full rounded-lg border-0 bg-surface px-4 py-3 text-on-surface ring-1 ring-inset ring-outline focus:outline-none focus:ring-2 focus:ring-primary disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              <option value="" disabled>{city ? "請選擇行政區" : "請先選縣市"}</option>
-              {districts.map((d) => (
-                <option key={d} value={d}>{d}</option>
-              ))}
-            </select>
+            <div className="relative">
+              <select
+                id="district"
+                name="district"
+                value={district}
+                onChange={(e) => setDistrict(e.target.value)}
+                required
+                disabled={!city}
+                className="block w-full appearance-none rounded-lg border-0 bg-surface pl-4 pr-10 py-3 text-on-surface ring-1 ring-inset ring-outline focus:outline-none focus:ring-2 focus:ring-primary disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                <option value="" disabled>{city ? "請選擇行政區" : "請先選縣市"}</option>
+                {districts.map((d) => (
+                  <option key={d} value={d}>{d}</option>
+                ))}
+              </select>
+              <SelectChevron />
+            </div>
           </FormField>
         </div>
 
