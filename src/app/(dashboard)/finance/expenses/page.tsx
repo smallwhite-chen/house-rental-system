@@ -24,7 +24,9 @@ export default async function ExpensesPage() {
       orderBy: { name: "asc" },
       select: { id: true, name: true },
     }),
+    // 「依房間篩選」只列 MULTI_UNIT 房產的房間（Q15）；WHOLE 的隱形 Unit 不在下拉
     prisma.unit.findMany({
+      where: { property: { kind: "MULTI_UNIT" } },
       orderBy: [{ propertyId: "asc" }, { number: "asc" }],
       select: { id: true, number: true, propertyId: true },
     }),

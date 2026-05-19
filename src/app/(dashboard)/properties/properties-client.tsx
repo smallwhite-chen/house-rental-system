@@ -2,9 +2,12 @@
 import { useState, useMemo } from "react";
 import Link from "next/link";
 import type { UnitStatusCounts } from "@/lib/unit-status";
+import type { PropertyKind } from "@/generated/prisma/client";
+import { PropertyKindModal } from "./property-kind-modal";
 
 type PropertyCard = {
   id: string;
+  kind: PropertyKind;
   name: string;
   typeName: string;
   city: string;
@@ -15,9 +18,16 @@ type PropertyCard = {
 
 type ViewMode = "card" | "list";
 
-export function PropertiesClient({ items }: { items: PropertyCard[] }) {
+export function PropertiesClient({
+  items,
+  canCreate,
+}: {
+  items: PropertyCard[];
+  canCreate: boolean;
+}) {
   const [view, setView] = useState<ViewMode>("card");
   const [search, setSearch] = useState("");
+  const [showKindModal, setShowKindModal] = useState(false);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -31,7 +41,25 @@ export function PropertiesClient({ items }: { items: PropertyCard[] }) {
   }, [items, search]);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
+      <header className="flex items-end justify-between">
+        <div>
+          <h1 className="text-3xl font-medium text-on-surface">房產管理</h1>
+          <p className="mt-1 text-sm text-on-surface-variant">
+            管理公司旗下房產（共 {items.length} 棟）
+          </p>
+        </div>
+        {canCreate && (
+          <button
+            onClick={() => setShowKindModal(true)}
+            className="inline-flex h-10 items-center gap-2 rounded-full bg-primary px-6 text-sm font-medium text-on-primary shadow-sm hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+          >
+            <PlusIcon />
+            新增房產
+          </button>
+        )}
+      </header>
+
       {/* Toolbar */}
       <div className="flex items-center gap-3 rounded-2xl bg-surface p-3 ring-1 ring-outline-variant">
         <div className="relative flex-1">
@@ -64,13 +92,16 @@ export function PropertiesClient({ items }: { items: PropertyCard[] }) {
       ) : (
         <PropertyListView properties={filtered} />
       )}
+
+      {showKindModal && <PropertyKindModal onClose={() => setShowKindModal(false)} />}
     </div>
   );
 }
 
 // ── Card View ──────────────────────────────────────────────────────────────
 function PropertyCardView({ property }: { property: PropertyCard }) {
-  const { counts } = property;
+  const { counts, kind } = property;
+  const isWhole = kind === "WHOLE_BUILDING";
   return (
     <Link
       href={`/properties/${property.id}`}
@@ -78,11 +109,14 @@ function PropertyCardView({ property }: { property: PropertyCard }) {
     >
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
-          <p className="truncate font-medium text-on-surface">{property.name}</p>
+          <div className="flex items-center gap-2">
+            <span className="text-lg" aria-hidden="true">{isWhole ? "🏪" : "🏢"}</span>
+            <p className="truncate font-medium text-on-surface">{property.name}</p>
+          </div>
           <p className="mt-0.5 text-xs text-on-surface-variant">{property.typeName}</p>
         </div>
-        <span className="rounded-full bg-surface-container-high px-2 py-0.5 text-xs text-on-surface-variant">
-          {counts.total} 房
+        <span className="whitespace-nowrap rounded-full bg-surface-container-high px-2 py-0.5 text-xs text-on-surface-variant">
+          {isWhole ? "整棟" : `${counts.total} 個單位`}
         </span>
       </div>
 
@@ -135,7 +169,7 @@ function PropertyListView({ properties }: { properties: PropertyCard[] }) {
             <th className="px-6 py-3">房產名稱</th>
             <th className="px-6 py-3">種類</th>
             <th className="px-6 py-3">地址</th>
-            <th className="px-6 py-3 text-center">總房間</th>
+            <th className="px-6 py-3 text-center">單位數</th>
             <th className="px-6 py-3 text-center">出租</th>
             <th className="px-6 py-3 text-center">空置</th>
             <th className="px-6 py-3 text-center">整修</th>
@@ -143,24 +177,30 @@ function PropertyListView({ properties }: { properties: PropertyCard[] }) {
           </tr>
         </thead>
         <tbody className="divide-y divide-outline-variant">
-          {properties.map((p) => (
-            <tr key={p.id} className="hover:bg-surface-container">
-              <td className="px-6 py-4">
-                <Link href={`/properties/${p.id}`} className="font-medium text-on-surface hover:text-primary hover:underline">
-                  {p.name}
-                </Link>
-              </td>
-              <td className="px-6 py-4 text-on-surface-variant">{p.typeName}</td>
-              <td className="px-6 py-4 text-on-surface-variant">
-                {p.city}{p.district}・{p.address}
-              </td>
-              <td className="px-6 py-4 text-center text-on-surface">{p.counts.total}</td>
-              <td className={`px-6 py-4 text-center ${p.counts.rented > 0 ? "text-status-rented" : "text-on-surface-variant/50"}`}>{p.counts.rented}</td>
-              <td className={`px-6 py-4 text-center ${p.counts.vacant > 0 ? "text-status-vacant" : "text-on-surface-variant/50"}`}>{p.counts.vacant}</td>
-              <td className={`px-6 py-4 text-center ${p.counts.maintenance > 0 ? "text-status-maintenance" : "text-on-surface-variant/50"}`}>{p.counts.maintenance}</td>
-              <td className={`px-6 py-4 text-center ${p.counts.overdue > 0 ? "text-status-overdue" : "text-on-surface-variant/50"}`}>{p.counts.overdue}</td>
-            </tr>
-          ))}
+          {properties.map((p) => {
+            const isWhole = p.kind === "WHOLE_BUILDING";
+            return (
+              <tr key={p.id} className="hover:bg-surface-container">
+                <td className="px-6 py-4">
+                  <Link href={`/properties/${p.id}`} className="flex items-center gap-2 font-medium text-on-surface hover:text-primary hover:underline">
+                    <span aria-hidden="true">{isWhole ? "🏪" : "🏢"}</span>
+                    {p.name}
+                  </Link>
+                </td>
+                <td className="px-6 py-4 text-on-surface-variant">{p.typeName}</td>
+                <td className="px-6 py-4 text-on-surface-variant">
+                  {p.city}{p.district}・{p.address}
+                </td>
+                <td className="px-6 py-4 text-center text-on-surface">
+                  {isWhole ? "整棟" : p.counts.total}
+                </td>
+                <td className={`px-6 py-4 text-center ${p.counts.rented > 0 ? "text-status-rented" : "text-on-surface-variant/50"}`}>{p.counts.rented}</td>
+                <td className={`px-6 py-4 text-center ${p.counts.vacant > 0 ? "text-status-vacant" : "text-on-surface-variant/50"}`}>{p.counts.vacant}</td>
+                <td className={`px-6 py-4 text-center ${p.counts.maintenance > 0 ? "text-status-maintenance" : "text-on-surface-variant/50"}`}>{p.counts.maintenance}</td>
+                <td className={`px-6 py-4 text-center ${p.counts.overdue > 0 ? "text-status-overdue" : "text-on-surface-variant/50"}`}>{p.counts.overdue}</td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
     </div>
@@ -180,6 +220,14 @@ function ViewToggleButton({ current, mode, onClick }: { current: ViewMode; mode:
     >
       {mode === "card" ? <GridIcon /> : <ListIcon />}
     </button>
+  );
+}
+
+function PlusIcon() {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4" aria-hidden="true">
+      <path d="M10.75 4.75a.75.75 0 0 0-1.5 0v4.5h-4.5a.75.75 0 0 0 0 1.5h4.5v4.5a.75.75 0 0 0 1.5 0v-4.5h4.5a.75.75 0 0 0 0-1.5h-4.5v-4.5Z" />
+    </svg>
   );
 }
 

@@ -77,6 +77,12 @@ enum NotificationEventType {
   SCHEDULED // 時間型（依日期觸發）
 }
 
+/// 房產類型（SPEC §4.0，Phase 10 新增）
+enum PropertyKind {
+  WHOLE_BUILDING // 整棟型：店面、整層出租、獨棟透天；以房產為合約主體
+  MULTI_UNIT // 多單位型：套房大樓、分租公寓；房產底下有多個房間
+}
+
 /// 房間類型（SPEC §4.3）
 enum UnitType {
   SUITE // 套房
@@ -374,11 +380,16 @@ model PaymentMethodCategory {
 // ═══════════════════════════════════════════════════════════════════════════
 
 model PropertyType {
-  id          String   @id @default(cuid())
-  name        String   @unique
+  id          String        @id @default(cuid())
+  name        String        @unique
+  /// 適用的房產類型（SPEC §3.6 + §4.0）。
+  /// - null：尚未分類（migration 預設值，待管理者手動補）
+  /// - WHOLE_BUILDING：僅供整棟型房產選用
+  /// - MULTI_UNIT：僅供多單位型房產選用
+  kind        PropertyKind?
   description String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
 
   properties Property[]
 }
@@ -453,7 +464,11 @@ model AuditLog {
 // ═══════════════════════════════════════════════════════════════════════════
 
 model Property {
-  id             String   @id @default(cuid())
+  id             String       @id @default(cuid())
+  /// 房產類型，建立後不可變更（SPEC §4.0，Phase 10 新增）
+  /// - WHOLE_BUILDING：房產為合約主體；DB 仍有 1 個隱形 Unit（number="整棟"），UI 不顯示
+  /// - MULTI_UNIT：房產下有多個房間，每個房間獨立簽約
+  kind           PropertyKind @default(MULTI_UNIT)
   name           String
   propertyTypeId String
   city           String // 縣市
@@ -462,9 +477,9 @@ model Property {
   buildYear      Int?
   totalFloors    Int?
   images         String[] // URL 陣列
-  note           String?  @db.Text
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  note           String?      @db.Text
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
 
   propertyType PropertyType @relation(fields: [propertyTypeId], references: [id], onDelete: Restrict)
   units        Unit[]

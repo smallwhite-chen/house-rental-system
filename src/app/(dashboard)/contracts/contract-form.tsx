@@ -11,7 +11,11 @@ import type { EquipmentCondition } from "@/generated/prisma/client";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
-export type PropertyOption = { id: string; name: string };
+export type PropertyOption = {
+  id: string;
+  name: string;
+  kind: "WHOLE_BUILDING" | "MULTI_UNIT";
+};
 
 export type UnitOption = {
   id: string;
@@ -135,6 +139,18 @@ export function ContractForm({
   // 依房產過濾房間
   const filteredUnits = propertyId ? units.filter((u) => u.propertyId === propertyId) : [];
 
+  // 判斷目前選定的房產是否為「整棟型」（隱藏房間欄位、自動帶入隱形 Unit）
+  const selectedProperty = propertyId ? properties.find((p) => p.id === propertyId) : null;
+  const isWholeBuilding = selectedProperty?.kind === "WHOLE_BUILDING";
+
+  // 整棟型：選了房產後自動帶入該房產唯一的隱形 Unit
+  useEffect(() => {
+    if (isWholeBuilding && filteredUnits.length > 0 && unitId !== filteredUnits[0].id) {
+      setUnitId(filteredUnits[0].id);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isWholeBuilding, propertyId]);
+
   // 起訖日受控（編輯時可用快速按鈕計算結束日）
   const [startDate, setStartDate] = useState(initial.startDate ?? "");
   const [endDate, setEndDate] = useState(initial.endDate ?? "");
@@ -243,31 +259,45 @@ export function ContractForm({
               required={!lockedSubject}
               options={[
                 { value: "", label: "— 請選擇 —" },
-                ...properties.map((p) => ({ value: p.id, label: p.name })),
+                ...properties.map((p) => ({
+                  value: p.id,
+                  label: `${p.kind === "WHOLE_BUILDING" ? "🏪" : "🏢"} ${p.name}`,
+                })),
               ]}
             />
           </FormField>
-          <FormField
-            label="關聯房間"
-            htmlFor="unitId"
-            required
-            helper={!propertyId ? "請先選擇關聯房產" : undefined}
-          >
-            <Select
-              id="unitId"
-              // disabled 的 select 不會把值送出，編輯模式改用下方 hidden input 帶值
-              name={lockedSubject ? undefined : "unitId"}
-              value={unitId}
-              onChange={(e) => setUnitId(e.target.value)}
-              disabled={lockedSubject || !propertyId}
-              required={!lockedSubject}
-              options={[
-                { value: "", label: propertyId ? "— 請選擇 —" : "— 請先選房產 —" },
-                ...filteredUnits.map((u) => ({ value: u.id, label: u.number })),
-              ]}
-            />
-            {lockedSubject && <input type="hidden" name="unitId" value={unitId} />}
-          </FormField>
+
+          {/* 整棟型房產：不顯示關聯房間欄位，但仍以 hidden input 送出 unitId */}
+          {isWholeBuilding ? (
+            <>
+              <input type="hidden" name="unitId" value={unitId} />
+              <div className="rounded-lg bg-status-completed/8 px-4 py-3 text-sm text-status-completed self-end">
+                🏪 整棟型房產，整棟即合約主體
+              </div>
+            </>
+          ) : (
+            <FormField
+              label="關聯房間"
+              htmlFor="unitId"
+              required
+              helper={!propertyId ? "請先選擇關聯房產" : undefined}
+            >
+              <Select
+                id="unitId"
+                // disabled 的 select 不會把值送出，編輯模式改用下方 hidden input 帶值
+                name={lockedSubject ? undefined : "unitId"}
+                value={unitId}
+                onChange={(e) => setUnitId(e.target.value)}
+                disabled={lockedSubject || !propertyId}
+                required={!lockedSubject}
+                options={[
+                  { value: "", label: propertyId ? "— 請選擇 —" : "— 請先選房產 —" },
+                  ...filteredUnits.map((u) => ({ value: u.id, label: u.number })),
+                ]}
+              />
+              {lockedSubject && <input type="hidden" name="unitId" value={unitId} />}
+            </FormField>
+          )}
           <FormField label="關聯房客" htmlFor="tenantId" required>
             <Select
               id="tenantId"

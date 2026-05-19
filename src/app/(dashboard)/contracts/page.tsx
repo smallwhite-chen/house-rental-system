@@ -19,7 +19,7 @@ export default async function ContractsPage() {
         unit: {
           select: {
             number: true,
-            property: { select: { id: true, name: true } },
+            property: { select: { id: true, name: true, kind: true } },
           },
         },
         tenant: { select: { name: true, phone: true } },
@@ -32,17 +32,24 @@ export default async function ContractsPage() {
   ]);
 
   const now = new Date();
-  const rows = contracts.map((c) => ({
-    id: c.id,
-    propertyId: c.unit.property.id,
-    unitLabel: `${c.unit.property.name} ${c.unit.number}`,
-    unitNumber: c.unit.number,
-    tenantName: c.tenant.name,
-    tenantPhone: c.tenant.phone,
-    startDate: c.startDate.toISOString().slice(0, 10),
-    endDate: c.endDate.toISOString().slice(0, 10),
-    status: computeContractStatus(c, now),
-  }));
+  const rows = contracts.map((c) => {
+    const isWhole = c.unit.property.kind === "WHOLE_BUILDING";
+    // Q7: WHOLE 顯示「🏪 房產名」；MULTI 顯示「🏢 房產名 房號」
+    const unitLabel = isWhole
+      ? `🏪 ${c.unit.property.name}`
+      : `🏢 ${c.unit.property.name} ${c.unit.number}`;
+    return {
+      id: c.id,
+      propertyId: c.unit.property.id,
+      unitLabel,
+      unitNumber: c.unit.number,
+      tenantName: c.tenant.name,
+      tenantPhone: c.tenant.phone,
+      startDate: c.startDate.toISOString().slice(0, 10),
+      endDate: c.endDate.toISOString().slice(0, 10),
+      status: computeContractStatus(c, now),
+    };
+  });
 
   return (
     <ContractsClient

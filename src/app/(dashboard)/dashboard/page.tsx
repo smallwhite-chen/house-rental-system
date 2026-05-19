@@ -112,7 +112,7 @@ export default async function DashboardPage({
       {/* ═══ 出租狀況總覽 ═══ */}
       <section>
         <h2 className="mb-3 text-sm font-medium uppercase tracking-wide text-on-surface-variant">
-          📊 出租狀況總覽（共 {unitCounts.total} 間）
+          📊 出租狀況總覽（共 {unitCounts.total} 個單位）
         </h2>
         <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
           <StatCard label="出租中" count={unitCounts.rented} tone="bg-status-rented/12 text-status-rented" />

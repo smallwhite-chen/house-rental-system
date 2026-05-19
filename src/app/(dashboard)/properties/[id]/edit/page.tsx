@@ -14,11 +14,30 @@ export default async function EditPropertyPage({ params }: { params: Promise<{ i
   await requirePermission("PROPERTIES", "EDIT");
   const { id } = await params;
 
-  const [property, propertyTypes] = await Promise.all([
-    prisma.property.findUnique({ where: { id } }),
-    prisma.propertyType.findMany({ orderBy: { createdAt: "asc" }, select: { id: true, name: true } }),
-  ]);
+  const property = await prisma.property.findUnique({ where: { id } });
   if (!property) notFound();
+
+  // 依當前房產 kind 過濾種類下拉；包含目前已選的 kind 為 null 的種類（防止編輯時看不到自己原本的種類）
+  const propertyTypes = await prisma.propertyType.findMany({
+    where: {
+      OR: [
+        { kind: property.kind },
+        { id: property.propertyTypeId }, // 保留目前已選的種類，即使 kind 不符
+      ],
+    },
+    orderBy: { createdAt: "asc" },
+    select: { id: true, name: true },
+  });
+
+  // WHOLE_BUILDING：抓出隱形 Unit 的 baseRent 帶入表單
+  let baseRent: string | null = null;
+  if (property.kind === "WHOLE_BUILDING") {
+    const unit = await prisma.unit.findFirst({
+      where: { propertyId: id },
+      select: { baseRent: true },
+    });
+    baseRent = unit ? unit.baseRent.toString() : null;
+  }
 
   return (
     <div className="space-y-6">
@@ -38,7 +57,10 @@ export default async function EditPropertyPage({ params }: { params: Promise<{ i
 
       <PropertyForm
         propertyTypes={propertyTypes}
+        kind={property.kind}
+        mode="edit"
         initial={{
+          kind: property.kind,
           name: property.name,
           propertyTypeId: property.propertyTypeId,
           city: property.city,
@@ -46,6 +68,7 @@ export default async function EditPropertyPage({ params }: { params: Promise<{ i
           address: property.address,
           buildYear: property.buildYear,
           totalFloors: property.totalFloors,
+          baseRent,
           note: property.note,
         }}
         submitLabel="儲存變更"

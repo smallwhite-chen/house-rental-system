@@ -3,21 +3,45 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
+import type { PropertyKind } from "@/generated/prisma/client";
 
 type Props = {
   propertyId: string;
   propertyName: string;
+  kind: PropertyKind;
+  /** MULTI_UNIT：可見房間數（不含隱形 Unit）；WHOLE_BUILDING：永遠是 0（不適用） */
   unitCount: number;
+  /** WHOLE_BUILDING：本房產合約數，>0 時禁止刪除 */
+  contractCount: number;
   canEdit: boolean;
   canDelete: boolean;
   deleteAction: (id: string) => Promise<{ error?: string }>;
 };
 
-export function PropertyActions({ propertyId, propertyName, unitCount, canEdit, canDelete, deleteAction }: Props) {
+export function PropertyActions({
+  propertyId,
+  propertyName,
+  kind,
+  unitCount,
+  contractCount,
+  canEdit,
+  canDelete,
+  deleteAction,
+}: Props) {
   const router = useRouter();
   const [confirming, setConfirming] = useState(false);
   const [error, setError] = useState("");
   const [isPending, start] = useTransition();
+
+  // 兩種 kind 的「無法刪除」條件不同
+  const blockedReason =
+    kind === "WHOLE_BUILDING"
+      ? contractCount > 0
+        ? `此房產目前有 ${contractCount} 份合約紀錄，無法刪除，請先刪除合約。`
+        : null
+      : unitCount > 0
+      ? `此房產目前有 ${unitCount} 間房間，無法刪除，請先刪除所有房間。`
+      : null;
 
   function handleDelete() {
     start(async () => {
@@ -57,15 +81,13 @@ export function PropertyActions({ propertyId, propertyName, unitCount, canEdit, 
             <p className="text-sm text-on-surface-variant">
               確定要刪除 <strong className="text-on-surface">「{propertyName}」</strong> 嗎？此動作無法復原。
             </p>
-            {unitCount > 0 && (
-              <p className="mt-2 text-sm text-error">
-                此房產目前有 {unitCount} 間房間，無法刪除，請先刪除所有房間。
-              </p>
+            {blockedReason && (
+              <p className="mt-2 text-sm text-error">{blockedReason}</p>
             )}
             {error && <p className="mt-2 text-sm text-error">{error}</p>}
             <div className="mt-4 flex justify-end gap-3">
               <Button variant="outlined" type="button" onClick={() => setConfirming(false)}>取消</Button>
-              <Button variant="danger" onClick={handleDelete} disabled={isPending || unitCount > 0}>
+              <Button variant="danger" onClick={handleDelete} disabled={isPending || !!blockedReason}>
                 {isPending ? "刪除中…" : "確認刪除"}
               </Button>
             </div>

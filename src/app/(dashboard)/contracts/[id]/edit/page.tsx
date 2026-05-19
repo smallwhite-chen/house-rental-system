@@ -30,7 +30,7 @@ export default async function EditContractPage({
       }),
       prisma.property.findMany({
         orderBy: { name: "asc" },
-        select: { id: true, name: true },
+        select: { id: true, name: true, kind: true },
       }),
       prisma.unit.findMany({
         orderBy: [{ property: { name: "asc" } }, { number: "asc" }],

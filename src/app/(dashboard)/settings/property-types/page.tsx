@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/rbac";
-import { TypeCrudClient } from "@/components/ui/TypeCrudClient";
+import { PropertyTypesClient } from "./property-types-client";
 import { createPropertyType, updatePropertyType, deletePropertyType } from "./actions";
 
 export const metadata: Metadata = {
@@ -10,11 +10,22 @@ export const metadata: Metadata = {
 
 export default async function PropertyTypesPage() {
   await requirePermission("SETTINGS_PROPERTY_TYPES", "VIEW");
-  const items = await prisma.propertyType.findMany({ orderBy: { createdAt: "asc" } });
+
+  const items = await prisma.propertyType.findMany({
+    orderBy: { createdAt: "asc" },
+    include: { _count: { select: { properties: true } } },
+  });
+
   return (
-    <TypeCrudClient
-      moduleName="房產種類"
-      items={items}
+    <PropertyTypesClient
+      items={items.map((t) => ({
+        id: t.id,
+        name: t.name,
+        description: t.description,
+        kind: t.kind,
+        inUse: t._count.properties > 0,
+        createdAt: t.createdAt,
+      }))}
       createAction={createPropertyType}
       updateAction={updatePropertyType}
       deleteAction={deletePropertyType}

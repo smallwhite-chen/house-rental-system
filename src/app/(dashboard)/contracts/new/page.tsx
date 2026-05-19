@@ -9,14 +9,21 @@ export const metadata: Metadata = {
   title: "新增合約 ｜ 房屋租賃管理系統",
 };
 
-export default async function NewContractPage() {
+export default async function NewContractPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ propertyId?: string }>;
+}) {
   await requirePermission("CONTRACTS", "CREATE");
+
+  const sp = await searchParams;
+  const preselectedPropertyId = sp.propertyId;
 
   const [properties, units, tenants, paymentMethods, bankAccounts, equipmentTypes] =
     await Promise.all([
       prisma.property.findMany({
         orderBy: { name: "asc" },
-        select: { id: true, name: true },
+        select: { id: true, name: true, kind: true },
       }),
       prisma.unit.findMany({
         orderBy: [{ property: { name: "asc" } }, { number: "asc" }],
@@ -27,6 +34,16 @@ export default async function NewContractPage() {
       prisma.bankAccount.findMany({ orderBy: { bankName: "asc" } }),
       prisma.equipmentType.findMany({ orderBy: { name: "asc" } }),
     ]);
+
+  // 從 ?propertyId= 帶來：若是 WHOLE_BUILDING 直接預填它的隱形 Unit
+  let preselectedUnitId: string | undefined;
+  if (preselectedPropertyId) {
+    const preselectedProperty = properties.find((p) => p.id === preselectedPropertyId);
+    if (preselectedProperty?.kind === "WHOLE_BUILDING") {
+      const unit = units.find((u) => u.property.id === preselectedPropertyId);
+      preselectedUnitId = unit?.id;
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -67,6 +84,7 @@ export default async function NewContractPage() {
           label: `${b.bankName} ${b.branchName} ${b.accountNumber}（${b.accountHolder}）`,
         }))}
         equipmentTypes={equipmentTypes.map((e) => ({ id: e.id, name: e.name }))}
+        initial={preselectedUnitId ? { unitId: preselectedUnitId } : undefined}
         submitLabel="建立合約"
         onSubmit={createContract}
         checkConflictAction={checkContractConflict}
