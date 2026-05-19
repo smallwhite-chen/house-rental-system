@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/Button";
 import { TextInput } from "@/components/ui/TextInput";
 import { FormField } from "@/components/ui/FormField";
 import { Select } from "@/components/ui/Select";
+import { FileUpload } from "@/components/ui/FileUpload";
+import { uploadFileAction } from "@/app/actions/upload";
 import { COMMUNICATION_STATUS_OPTIONS } from "@/lib/communication-status";
 import type { CommunicationStatus } from "@/generated/prisma/client";
 
@@ -243,13 +245,14 @@ export function CommunicationForm({
       <section className="space-y-4 rounded-2xl bg-surface p-6 ring-1 ring-outline-variant">
         <h2 className="text-lg font-medium text-on-surface">其他</h2>
 
-        <FormField label="附件 URL" htmlFor="attachmentUrl" helper="Phase 6 storage 上線後將改為檔案上傳">
-          <TextInput
-            id="attachmentUrl"
+        <FormField label="附件" htmlFor="attachmentUrl">
+          <FileUpload
             name="attachmentUrl"
-            type="url"
-            defaultValue={initial.attachmentUrl ?? ""}
-            placeholder="https://..."
+            prefix="communications"
+            kind="image"
+            defaultUrl={initial.attachmentUrl}
+            label="點擊或拖入附件圖片"
+            uploadAction={uploadFileAction}
           />
         </FormField>
 

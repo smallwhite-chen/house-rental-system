@@ -6,6 +6,7 @@ import { requirePermission, hasPermission } from "@/lib/rbac";
 import { computeUnitStatus, summarizeUnitStatuses } from "@/lib/unit-status";
 import { computeContractStatus, CONTRACT_STATUS_META } from "@/lib/contract-status";
 import { StatusChip } from "@/components/ui/StatusChip";
+import { ImageGallery } from "@/components/ui/ImageGallery";
 import { PropertyActions } from "./property-actions";
 import { UnitsView } from "./units-view";
 import { deleteProperty } from "../actions";
@@ -120,6 +121,10 @@ export default async function PropertyDetailPage({ params }: { params: Promise<{
         </div>
       </header>
 
+      {property.images.length > 0 && (
+        <ImageGallery urls={property.images} title="🖼 房產圖片" />
+      )}
+
       {isWhole ? (
         <WholePropertyContractView
           propertyId={property.id}
@@ -148,6 +153,7 @@ type MultiUnit = {
   type: UnitType;
   baseRent: import("@/generated/prisma/client").Prisma.Decimal;
   area: number | null;
+  images: string[];
   manualStatus: UnitStatus | null;
   contracts: WholeContract[];
 };
@@ -191,6 +197,7 @@ function MultiUnitView({
       type: u.type,
       baseRent: Number(u.baseRent),
       area: u.area,
+      thumbnailUrl: u.images[0] ?? null,
       status,
       tenantName: liveContract?.tenant.name ?? null,
       actualRent: liveContract?.billingTerms ? Number(liveContract.billingTerms.actualRent) : null,

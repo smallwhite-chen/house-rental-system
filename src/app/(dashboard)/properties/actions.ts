@@ -27,6 +27,13 @@ function parseKind(v: FormDataEntryValue | null): PropertyKind | null {
   return null;
 }
 
+/** 取 fd 多個同名值，過濾空白；對應 MultiImageUpload 的 hidden inputs */
+function strs(fd: FormData, key: string): string[] {
+  return fd.getAll(key)
+    .map((v) => (typeof v === "string" ? v.trim() : ""))
+    .filter(Boolean);
+}
+
 type PropertyResult = { error?: string; id?: string };
 
 export async function createProperty(fd: FormData): Promise<PropertyResult> {
@@ -40,6 +47,7 @@ export async function createProperty(fd: FormData): Promise<PropertyResult> {
   const address = s(fd.get("address"));
   const buildYear = n(fd.get("buildYear"));
   const totalFloors = n(fd.get("totalFloors"));
+  const images = strs(fd, "images");
   const note = s(fd.get("note")) || null;
 
   if (!kind) return { error: "請選擇房產類型（整棟型 / 多單位型）" };
@@ -60,7 +68,7 @@ export async function createProperty(fd: FormData): Promise<PropertyResult> {
     // Property + 隱形 Unit（僅 WHOLE）一起建立
     const item = await prisma.$transaction(async (tx) => {
       const property = await tx.property.create({
-        data: { kind, name, propertyTypeId, city, district, address, buildYear, totalFloors, note },
+        data: { kind, name, propertyTypeId, city, district, address, buildYear, totalFloors, images, note },
       });
 
       if (kind === "WHOLE_BUILDING") {
@@ -103,6 +111,7 @@ export async function updateProperty(id: string, fd: FormData): Promise<Property
   const address = s(fd.get("address"));
   const buildYear = n(fd.get("buildYear"));
   const totalFloors = n(fd.get("totalFloors"));
+  const images = strs(fd, "images");
   const note = s(fd.get("note")) || null;
 
   if (!name || !propertyTypeId || !city || !district || !address) {
@@ -129,7 +138,7 @@ export async function updateProperty(id: string, fd: FormData): Promise<Property
     await prisma.$transaction(async (tx) => {
       await tx.property.update({
         where: { id },
-        data: { name, propertyTypeId, city, district, address, buildYear, totalFloors, note },
+        data: { name, propertyTypeId, city, district, address, buildYear, totalFloors, images, note },
       });
 
       if (existing.kind === "WHOLE_BUILDING" && newBaseRent != null) {

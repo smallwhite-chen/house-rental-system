@@ -13,6 +13,8 @@ type PropertyCard = {
   city: string;
   district: string;
   address: string;
+  /** 整棟型房產：首張圖片 URL；無圖或多單位型為 null */
+  thumbnailUrl: string | null;
   counts: UnitStatusCounts;
 };
 
@@ -108,12 +110,28 @@ function PropertyCardView({ property }: { property: PropertyCard }) {
       className="block rounded-2xl bg-surface p-5 ring-1 ring-outline-variant transition-all hover:shadow-md hover:ring-primary/40"
     >
       <div className="flex items-start justify-between gap-2">
-        <div className="min-w-0">
-          <div className="flex items-center gap-2">
-            <span className="text-lg" aria-hidden="true">{isWhole ? "🏪" : "🏢"}</span>
+        <div className="flex min-w-0 items-center gap-3">
+          {/* 整棟型：有圖顯示縮圖、無圖 fallback emoji；多單位型：emoji */}
+          {isWhole ? (
+            property.thumbnailUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={property.thumbnailUrl}
+                alt={`${property.name} 縮圖`}
+                className="h-12 w-12 flex-shrink-0 rounded-lg object-cover ring-1 ring-outline-variant"
+              />
+            ) : (
+              <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-lg bg-status-completed/12 text-2xl">
+                🏪
+              </div>
+            )
+          ) : (
+            <span className="text-lg" aria-hidden="true">🏢</span>
+          )}
+          <div className="min-w-0">
             <p className="truncate font-medium text-on-surface">{property.name}</p>
+            <p className="mt-0.5 text-xs text-on-surface-variant">{property.typeName}</p>
           </div>
-          <p className="mt-0.5 text-xs text-on-surface-variant">{property.typeName}</p>
         </div>
         <span className="whitespace-nowrap rounded-full bg-surface-container-high px-2 py-0.5 text-xs text-on-surface-variant">
           {isWhole ? "整棟" : `${counts.total} 個單位`}

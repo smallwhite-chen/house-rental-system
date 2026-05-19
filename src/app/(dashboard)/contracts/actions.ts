@@ -42,6 +42,7 @@ type ParsedEquipment = {
   equipmentTypeId: string;
   quantity: number;
   condition: EquipmentCondition;
+  photos: string[];
   note: string | null;
 };
 
@@ -132,10 +133,15 @@ function parseForm(fd: FormData): { error: string } | {
     if (cond !== "GOOD" && cond !== "FAIR" && cond !== "DAMAGED") {
       return { error: "設備狀態無效" };
     }
+    const photos = fd.getAll(`equip_photos_${idx}`)
+      .map((v) => (typeof v === "string" ? v.trim() : ""))
+      .filter(Boolean);
+    if (photos.length > 5) return { error: "每筆設備照片最多 5 張" };
     equipment.push({
       equipmentTypeId: typeId,
       quantity: qty,
       condition: cond,
+      photos,
       note: s(fd, `equip_note_${idx}`) || null,
     });
   }

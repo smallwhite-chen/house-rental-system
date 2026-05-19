@@ -12,6 +12,7 @@ type UnitView = {
   type: UnitType;
   baseRent: number;
   area: number | null;
+  thumbnailUrl: string | null;
   status: UnitStatus;
   tenantName: string | null;
   actualRent: number | null;
@@ -116,11 +117,26 @@ function UnitCard({ propertyId, unit }: { propertyId: string; unit: UnitView }) 
       href={`/properties/${propertyId}/units/${unit.id}`}
       className="block rounded-2xl bg-surface p-4 ring-1 ring-outline-variant transition-all hover:shadow-md hover:ring-primary/40"
     >
-      <div className="flex items-center justify-between">
-        <span className="text-lg font-medium text-on-surface">{unit.number}</span>
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex min-w-0 items-center gap-3">
+          {/* 第一張房間圖片縮圖；無則灰色預留方塊 */}
+          {unit.thumbnailUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={unit.thumbnailUrl}
+              alt={`${unit.number} 房間照片`}
+              className="h-12 w-12 flex-shrink-0 rounded-lg object-cover ring-1 ring-outline-variant"
+            />
+          ) : (
+            <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-lg bg-surface-container text-on-surface-variant ring-1 ring-outline-variant">
+              <PlaceholderIcon />
+            </div>
+          )}
+          <span className="text-lg font-medium text-on-surface truncate">{unit.number}</span>
+        </div>
         <StatusChip tone={meta.tone} label={meta.label} />
       </div>
-      <p className="mt-1 text-xs text-on-surface-variant">
+      <p className="mt-2 text-xs text-on-surface-variant">
         {UNIT_TYPE_LABEL[unit.type]}{unit.area ? ` · ${unit.area} 坪` : ""}
       </p>
 
@@ -131,6 +147,14 @@ function UnitCard({ propertyId, unit }: { propertyId: string; unit: UnitView }) 
         <Row label="合約到期" value={fmtDate(unit.endDate)} />
       </div>
     </Link>
+  );
+}
+
+function PlaceholderIcon() {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-5 w-5 opacity-50" aria-hidden="true">
+      <path fillRule="evenodd" d="M1.5 6a2.25 2.25 0 0 1 2.25-2.25h16.5A2.25 2.25 0 0 1 22.5 6v12a2.25 2.25 0 0 1-2.25 2.25H3.75A2.25 2.25 0 0 1 1.5 18V6ZM3 16.06V18c0 .414.336.75.75.75h16.5A.75.75 0 0 0 21 18v-1.94l-2.69-2.689a1.5 1.5 0 0 0-2.12 0l-.88.879.97.97a.75.75 0 1 1-1.06 1.06l-5.16-5.159a1.5 1.5 0 0 0-2.12 0L3 16.061Zm10.125-7.81a1.125 1.125 0 1 1 2.25 0 1.125 1.125 0 0 1-2.25 0Z" clipRule="evenodd" />
+    </svg>
   );
 }
 

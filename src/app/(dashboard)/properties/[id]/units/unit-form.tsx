@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/Button";
 import { TextInput } from "@/components/ui/TextInput";
 import { FormField } from "@/components/ui/FormField";
 import { SelectChevron } from "@/components/ui/Select";
+import { MultiImageUpload } from "@/components/ui/MultiImageUpload";
+import { uploadFileAction } from "@/app/actions/upload";
 import type { UnitType } from "@/generated/prisma/client";
 
 export type UnitFormInitial = {
@@ -13,6 +15,7 @@ export type UnitFormInitial = {
   type: UnitType;
   area: number | null;
   baseRent: number;
+  images: string[];
   note: string | null;
   manualMaintenance: boolean; // 是否處於管理者手動「整修中」狀態
 };
@@ -102,6 +105,16 @@ export function UnitForm({ propertyId, totalFloors, initial, submitLabel, onSubm
 
         <FormField label="基本租金 (NT$/月)" htmlFor="baseRent" required helper="合約簽訂時可調整實際租金">
           <TextInput id="baseRent" name="baseRent" type="number" inputMode="numeric" min={0} step={100} defaultValue={initial?.baseRent ?? ""} placeholder="例如：15000" required />
+        </FormField>
+
+        <FormField label="房間圖片" htmlFor="images" helper="最多 10 張">
+          <MultiImageUpload
+            name="images"
+            prefix="units"
+            max={10}
+            defaultUrls={initial?.images ?? []}
+            uploadAction={uploadFileAction}
+          />
         </FormField>
 
         <FormField label="備註" htmlFor="note">

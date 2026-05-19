@@ -17,6 +17,11 @@ function n(v: FormDataEntryValue | null): number | null {
   const num = Number(raw);
   return Number.isFinite(num) ? num : null;
 }
+function strs(fd: FormData, key: string): string[] {
+  return fd.getAll(key)
+    .map((v) => (typeof v === "string" ? v.trim() : ""))
+    .filter(Boolean);
+}
 
 type UnitResult = { error?: string; id?: string };
 
@@ -28,6 +33,7 @@ export async function createUnit(propertyId: string, fd: FormData): Promise<Unit
   const type = s(fd.get("type")) as UnitType;
   const area = n(fd.get("area"));
   const baseRent = n(fd.get("baseRent"));
+  const images = strs(fd, "images");
   const note = s(fd.get("note")) || null;
 
   if (!number || floor === null || !type || baseRent === null) {
@@ -35,10 +41,11 @@ export async function createUnit(propertyId: string, fd: FormData): Promise<Unit
   }
   if (baseRent < 0) return { error: "基本租金不可為負數" };
   if (!["SUITE", "ROOM"].includes(type)) return { error: "房間類型不正確" };
+  if (images.length > 10) return { error: "房間圖片最多 10 張" };
 
   try {
     const item = await prisma.unit.create({
-      data: { propertyId, number, floor, type, area, baseRent, note },
+      data: { propertyId, number, floor, type, area, baseRent, images, note },
     });
     await logAudit({
       userId: ctx.id,
@@ -63,6 +70,7 @@ export async function updateUnit(unitId: string, fd: FormData): Promise<UnitResu
   const type = s(fd.get("type")) as UnitType;
   const area = n(fd.get("area"));
   const baseRent = n(fd.get("baseRent"));
+  const images = strs(fd, "images");
   const note = s(fd.get("note")) || null;
   const manualStatusRaw = s(fd.get("manualStatus"));
   // 表單只允許 "MAINTENANCE" 或空字串（清除手動覆寫）
@@ -73,6 +81,7 @@ export async function updateUnit(unitId: string, fd: FormData): Promise<UnitResu
     return { error: "房間編號、樓層、類型、基本租金為必填" };
   }
   if (baseRent < 0) return { error: "基本租金不可為負數" };
+  if (images.length > 10) return { error: "房間圖片最多 10 張" };
 
   try {
     const before = await prisma.unit.findUnique({
@@ -83,7 +92,7 @@ export async function updateUnit(unitId: string, fd: FormData): Promise<UnitResu
 
     await prisma.unit.update({
       where: { id: unitId },
-      data: { number, floor, type, area, baseRent, note, manualStatus },
+      data: { number, floor, type, area, baseRent, images, note, manualStatus },
     });
     await logAudit({
       userId: ctx.id,

@@ -119,6 +119,7 @@ export default async function EditContractPage({
             equipmentTypeId: e.equipmentTypeId,
             quantity: e.quantity,
             condition: e.condition,
+            photos: e.photos,
             note: e.note,
           })),
         }}

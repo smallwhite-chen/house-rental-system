@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/Button";
 import { TextInput } from "@/components/ui/TextInput";
 import { FormField } from "@/components/ui/FormField";
 import { SelectChevron } from "@/components/ui/Select";
+import { MultiImageUpload } from "@/components/ui/MultiImageUpload";
+import { uploadFileAction } from "@/app/actions/upload";
 import { getCities, getDistricts } from "@/lib/taiwan-districts";
 import type { PropertyKind } from "@/generated/prisma/client";
 
@@ -20,6 +22,7 @@ export type PropertyFormData = {
   buildYear: number | null;
   totalFloors: number | null;
   baseRent: string | null; // 僅 WHOLE_BUILDING；以字串避免 Decimal 序列化
+  images: string[];
   note: string | null;
 };
 
@@ -199,6 +202,15 @@ export function PropertyForm({
             />
           </FormField>
         )}
+
+        <FormField label="房產圖片" htmlFor="images" helper="可上傳多張">
+          <MultiImageUpload
+            name="images"
+            prefix="properties"
+            defaultUrls={initial?.images ?? []}
+            uploadAction={uploadFileAction}
+          />
+        </FormField>
 
         <FormField label="備註" htmlFor="note">
           <TextInput id="note" name="note" defaultValue={initial?.note ?? ""} placeholder="選填" />

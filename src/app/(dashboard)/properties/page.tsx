@@ -30,6 +30,7 @@ export default async function PropertiesListPage() {
   });
 
   // 每個房產換算成卡片需要的精簡資料
+  // 整棟型卡片會用第一張房產圖片當縮圖（無圖時 client 端 fallback 到 emoji）
   const items = properties.map((p) => ({
     id: p.id,
     kind: p.kind,
@@ -38,6 +39,7 @@ export default async function PropertiesListPage() {
     city: p.city,
     district: p.district,
     address: p.address,
+    thumbnailUrl: p.kind === "WHOLE_BUILDING" ? p.images[0] ?? null : null,
     counts: summarizeUnitStatuses(p.units),
   }));
 

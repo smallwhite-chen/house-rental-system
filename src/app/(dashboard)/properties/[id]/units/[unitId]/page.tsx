@@ -86,6 +86,7 @@ export default async function UnitDetailPage({
             type: unit.type,
             area: unit.area,
             baseRent: Number(unit.baseRent),
+            images: unit.images,
             note: unit.note,
             manualMaintenance: unit.manualStatus === "MAINTENANCE",
           }}

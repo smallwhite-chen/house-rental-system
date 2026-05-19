@@ -69,6 +69,7 @@ export default async function EditPropertyPage({ params }: { params: Promise<{ i
           buildYear: property.buildYear,
           totalFloors: property.totalFloors,
           baseRent,
+          images: property.images,
           note: property.note,
         }}
         submitLabel="儲存變更"

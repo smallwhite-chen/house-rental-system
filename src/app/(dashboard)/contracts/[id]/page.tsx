@@ -209,6 +209,7 @@ export default async function ContractDetailPage({
                 <th className="pb-2">數量</th>
                 <th className="pb-2">狀態</th>
                 <th className="pb-2">備註</th>
+                <th className="pb-2">照片</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-outline-variant">
@@ -219,6 +220,26 @@ export default async function ContractDetailPage({
                   <td className="py-2 text-on-surface-variant">{COND_LABEL[e.condition]}</td>
                   <td className="py-2 text-on-surface-variant">
                     {e.note ?? <span className="text-outline">—</span>}
+                  </td>
+                  <td className="py-2">
+                    {e.photos.length === 0 ? (
+                      <span className="text-outline">—</span>
+                    ) : (
+                      <div className="flex gap-1">
+                        {e.photos.map((url, i) => (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <a
+                            key={i}
+                            href={url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="block h-10 w-10 overflow-hidden rounded ring-1 ring-outline-variant hover:ring-primary"
+                          >
+                            <img src={url} alt={`設備照片 ${i + 1}`} className="h-full w-full object-cover" />
+                          </a>
+                        ))}
+                      </div>
+                    )}
                   </td>
                 </tr>
               ))}

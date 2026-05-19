@@ -6,6 +6,7 @@ import { TextInput } from "@/components/ui/TextInput";
 import { FormField } from "@/components/ui/FormField";
 import { Select, SelectChevron } from "@/components/ui/Select";
 import { FileUpload } from "@/components/ui/FileUpload";
+import { MultiImageUpload } from "@/components/ui/MultiImageUpload";
 import { uploadFileAction } from "@/app/actions/upload";
 import type { EquipmentCondition } from "@/generated/prisma/client";
 
@@ -40,6 +41,7 @@ export type EquipmentInitial = {
   equipmentTypeId: string;
   quantity: number;
   condition: EquipmentCondition;
+  photos: string[];
   note: string | null;
 };
 
@@ -216,7 +218,7 @@ export function ContractForm({
   function addEquipRow() {
     setEquipRows((rows) => [
       ...rows,
-      { equipmentTypeId: equipmentTypes[0]?.id ?? "", quantity: 1, condition: "GOOD", note: null },
+      { equipmentTypeId: equipmentTypes[0]?.id ?? "", quantity: 1, condition: "GOOD", photos: [], note: null },
     ]);
   }
   function removeEquipRow(idx: number) {
@@ -589,60 +591,73 @@ export function ContractForm({
             {equipRows.map((row, idx) => (
               <div
                 key={idx}
-                className="grid gap-3 rounded-xl bg-surface-container p-3 md:grid-cols-[1fr_120px_120px_1fr_auto]"
+                className="space-y-3 rounded-xl bg-surface-container p-3"
               >
-                <div className="relative">
-                  <select
-                    name={`equip_typeId_${idx}`}
-                    value={row.equipmentTypeId}
-                    onChange={(e) => updateEquipRow(idx, "equipmentTypeId", e.target.value)}
-                    className="block w-full appearance-none rounded-lg bg-surface pl-3 pr-9 py-2 text-sm ring-1 ring-outline focus:outline-none focus:ring-2 focus:ring-primary"
+                <div className="grid gap-3 md:grid-cols-[1fr_120px_120px_1fr_auto]">
+                  <div className="relative">
+                    <select
+                      name={`equip_typeId_${idx}`}
+                      value={row.equipmentTypeId}
+                      onChange={(e) => updateEquipRow(idx, "equipmentTypeId", e.target.value)}
+                      className="block w-full appearance-none rounded-lg bg-surface pl-3 pr-9 py-2 text-sm ring-1 ring-outline focus:outline-none focus:ring-2 focus:ring-primary"
+                    >
+                      {equipmentTypes.map((t) => (
+                        <option key={t.id} value={t.id}>{t.name}</option>
+                      ))}
+                    </select>
+                    <SelectChevron />
+                  </div>
+                  <input
+                    type="number"
+                    name={`equip_qty_${idx}`}
+                    min="1"
+                    step="1"
+                    value={row.quantity}
+                    onChange={(e) => updateEquipRow(idx, "quantity", Number(e.target.value))}
+                    placeholder="數量"
+                    className="rounded-lg bg-surface px-3 py-2 text-sm ring-1 ring-outline focus:outline-none focus:ring-2 focus:ring-primary"
+                  />
+                  <div className="relative">
+                    <select
+                      name={`equip_cond_${idx}`}
+                      value={row.condition}
+                      onChange={(e) => updateEquipRow(idx, "condition", e.target.value as EquipmentCondition)}
+                      className="block w-full appearance-none rounded-lg bg-surface pl-3 pr-9 py-2 text-sm ring-1 ring-outline focus:outline-none focus:ring-2 focus:ring-primary"
+                    >
+                      <option value="GOOD">良好</option>
+                      <option value="FAIR">普通</option>
+                      <option value="DAMAGED">損壞</option>
+                    </select>
+                    <SelectChevron />
+                  </div>
+                  <input
+                    type="text"
+                    name={`equip_note_${idx}`}
+                    value={row.note ?? ""}
+                    onChange={(e) => updateEquipRow(idx, "note", e.target.value)}
+                    placeholder="備註（選填）"
+                    className="rounded-lg bg-surface px-3 py-2 text-sm ring-1 ring-outline focus:outline-none focus:ring-2 focus:ring-primary"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => removeEquipRow(idx)}
+                    className="rounded-lg px-3 text-sm text-error hover:bg-error/8"
+                    aria-label="刪除此設備"
                   >
-                    {equipmentTypes.map((t) => (
-                      <option key={t.id} value={t.id}>{t.name}</option>
-                    ))}
-                  </select>
-                  <SelectChevron />
+                    ✕
+                  </button>
                 </div>
-                <input
-                  type="number"
-                  name={`equip_qty_${idx}`}
-                  min="1"
-                  step="1"
-                  value={row.quantity}
-                  onChange={(e) => updateEquipRow(idx, "quantity", Number(e.target.value))}
-                  placeholder="數量"
-                  className="rounded-lg bg-surface px-3 py-2 text-sm ring-1 ring-outline focus:outline-none focus:ring-2 focus:ring-primary"
-                />
-                <div className="relative">
-                  <select
-                    name={`equip_cond_${idx}`}
-                    value={row.condition}
-                    onChange={(e) => updateEquipRow(idx, "condition", e.target.value as EquipmentCondition)}
-                    className="block w-full appearance-none rounded-lg bg-surface pl-3 pr-9 py-2 text-sm ring-1 ring-outline focus:outline-none focus:ring-2 focus:ring-primary"
-                  >
-                    <option value="GOOD">良好</option>
-                    <option value="FAIR">普通</option>
-                    <option value="DAMAGED">損壞</option>
-                  </select>
-                  <SelectChevron />
+                <div>
+                  <p className="mb-1.5 text-xs text-on-surface-variant">設備照片（最多 5 張）</p>
+                  <MultiImageUpload
+                    name={`equip_photos_${idx}`}
+                    prefix="equipment"
+                    max={5}
+                    defaultUrls={row.photos}
+                    uploadAction={uploadFileAction}
+                    onChange={(urls) => updateEquipRow(idx, "photos", urls)}
+                  />
                 </div>
-                <input
-                  type="text"
-                  name={`equip_note_${idx}`}
-                  value={row.note ?? ""}
-                  onChange={(e) => updateEquipRow(idx, "note", e.target.value)}
-                  placeholder="備註（選填）"
-                  className="rounded-lg bg-surface px-3 py-2 text-sm ring-1 ring-outline focus:outline-none focus:ring-2 focus:ring-primary"
-                />
-                <button
-                  type="button"
-                  onClick={() => removeEquipRow(idx)}
-                  className="rounded-lg px-3 text-sm text-error hover:bg-error/8"
-                  aria-label="刪除此設備"
-                >
-                  ✕
-                </button>
               </div>
             ))}
           </div>
